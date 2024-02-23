@@ -6,9 +6,9 @@ PI = math.pi
 class QSR(object):
     # constructor
     def __init__(self, binary_qsr_choice, ternary_qsr_choice, R):
-        self.binary_qsr_choice = 1
-        self.ternary_qsr_choice = 3
-        self.R = 1    
+        self.binary_qsr_choice = binary_qsr_choice
+        self.ternary_qsr_choice = ternary_qsr_choice
+        self.R = R    
         self.PI = PI
 
         self.defineBinaryQsrCalculus()
