@@ -54,8 +54,8 @@ abstraction_levels = ["coordinates","angles/distances","right/left","semantic an
 specificity_levels = ["general picture","summary","detailed narrative"]
 explanation_levels = ["no verb","descriptive","suggestive","counterfactual","descriptive/suggestive","suggestive/counterfactual","counterfactual/descriptive","descriptive/suggestive/counterfactual"]
 
-abstraction_level = abstraction_levels[2]
-specificity_level = specificity_levels[2]
+abstraction_level = abstraction_levels[1]
+specificity_level = specificity_levels[0]
 explanation_level = explanation_levels[3]
 
 space_dummy = " "
@@ -312,19 +312,127 @@ for plan in plans:
 
             if abstraction_level == "coordinates":
                 if specificity_level == "detailed narrative":
-                    action_string_verb = robot + space_dummy + "has failed" + space_dummy + "while" + space_dummy + reason_action + space_dummy + object_1 + space_dummy + "at" + space_dummy + object_2 + space_dummy + "which is" + space_dummy + reason
+                    description = robot + space_dummy + "has experienced a failure" + space_dummy + "while" + space_dummy + reason_action + space_dummy + "object" + space_dummy + coord_dummy + space_dummy + "which is" + space_dummy + coord_dummy + space_dummy + reason
+                    suggestion = "dear human, please help me" + space_dummy + reason_action + space_dummy + "object" + space_dummy + coord_dummy
+                    counterfactual = "if" + space_dummy + "object" + space_dummy + coord_dummy + space_dummy + "was not" + space_dummy + reason + ',' + space_dummy + "I would be able to" + space_dummy + reason_action + space_dummy + "object" + space_dummy + coord_dummy
+                    if explanation_level == "no verb":
+                        action_string_verb = robot + space_dummy + "has experienced a failure" + space_dummy + "while" + space_dummy + reason_action + space_dummy + "object" + space_dummy + coord_dummy
+                    elif explanation_level == "descriptive":
+                        action_string_verb = description
+                    elif explanation_level == "suggestive":
+                        action_string_verb = suggestion
+                    elif explanation_level == "counterfactual":
+                        action_string_verb = counterfactual
+                    elif explanation_level == "descriptive/suggestive":
+                        action_string_verb = description + '. ' + suggestion
+                    elif explanation_level == "suggestive/counterfactual":
+                        action_string_verb = suggestion + '. ' + counterfactual
+                    elif explanation_level == "counterfactual/descriptive":
+                        action_string_verb = counterfactual + '. ' + description
+                    elif explanation_level == "descriptive/suggestive/counterfactual":
+                        action_string_verb = description + '. ' + suggestion + '. ' + counterfactual 
                 elif specificity_level == "summary":
-                    action_string_verb = robot + space_dummy + is_dummy + space_dummy + ask_for_help_dummy + space_dummy + coord_dummy_2
+                    description = robot + space_dummy + "has experienced a failure" + space_dummy + "while" + space_dummy + reason_action + space_dummy + coord_dummy_2 + space_dummy + "which is" + space_dummy + reason
+                    suggestion = "dear human, please help me" + space_dummy + reason_action + space_dummy + coord_dummy_2
+                    counterfactual = "if" + space_dummy + "object" + space_dummy + coord_dummy_2 + space_dummy + "was not" + space_dummy + reason + ',' + space_dummy + "I would be able to" + space_dummy + reason_action + space_dummy + coord_dummy_2
+                    if explanation_level == "no verb":
+                        action_string_verb = robot + space_dummy + "has experienced a failure" + space_dummy + "while" + space_dummy + reason_action + space_dummy + coord_dummy_2
+                    elif explanation_level == "descriptive":
+                        action_string_verb = description
+                    elif explanation_level == "suggestive":
+                        action_string_verb = suggestion
+                    elif explanation_level == "counterfactual":
+                        action_string_verb = counterfactual
+                    elif explanation_level == "descriptive/suggestive":
+                        action_string_verb = description + '. ' + suggestion
+                    elif explanation_level == "suggestive/counterfactual":
+                        action_string_verb = suggestion + '. ' + counterfactual
+                    elif explanation_level == "counterfactual/descriptive":
+                        action_string_verb = counterfactual + '. ' + description
+                    elif explanation_level == "descriptive/suggestive/counterfactual":
+                        action_string_verb = description + '. ' + suggestion + '. ' + counterfactual 
                 elif specificity_level == "general picture":
-                    action_string_verb = robot + space_dummy + is_dummy + space_dummy + ask_for_help_dummy
+                    description = robot + space_dummy + "has experienced a failure" + space_dummy + "while" + space_dummy + reason_action + space_dummy + "which is" + space_dummy + reason
+                    suggestion = "dear human, please help me" + space_dummy + reason_action
+                    counterfactual = "if" + space_dummy + "object" + space_dummy + "was not" + space_dummy + reason + ',' + space_dummy + "I would be able to" + space_dummy + reason_action
+                    if explanation_level == "no verb":
+                        action_string_verb = robot + space_dummy + "has experienced a failure" + space_dummy + "while" + space_dummy + reason_action
+                    elif explanation_level == "descriptive":
+                        action_string_verb = description
+                    elif explanation_level == "suggestive":
+                        action_string_verb = suggestion
+                    elif explanation_level == "counterfactual":
+                        action_string_verb = counterfactual
+                    elif explanation_level == "descriptive/suggestive":
+                        action_string_verb = description + '. ' + suggestion
+                    elif explanation_level == "suggestive/counterfactual":
+                        action_string_verb = suggestion + '. ' + counterfactual
+                    elif explanation_level == "counterfactual/descriptive":
+                        action_string_verb = counterfactual + '. ' + description
+                    elif explanation_level == "descriptive/suggestive/counterfactual":
+                        action_string_verb = description + '. ' + suggestion + '. ' + counterfactual 
 
             elif abstraction_level == "angles/distances":
                 if specificity_level == "detailed narrative":
-                    action_string_verb = robot + space_dummy + is_dummy + space_dummy + ask_for_help_dummy + space_dummy + distance_dummy
+                    description = robot + space_dummy + "has experienced a failure" + space_dummy + "while" + space_dummy + reason_action + space_dummy + "object" + space_dummy + distance_dummy + space_dummy + "which is" + space_dummy + reason
+                    suggestion = "dear human, please help me" + space_dummy + reason_action + space_dummy + "object" + space_dummy + distance_dummy
+                    counterfactual = "if" + space_dummy + "object" + space_dummy + distance_dummy + space_dummy + "was not" + space_dummy + reason + ',' + space_dummy + "I would be able to" + space_dummy + reason_action + space_dummy + "object" + space_dummy + distance_dummy
+                    if explanation_level == "no verb":
+                        action_string_verb = robot + space_dummy + "has experienced a failure" + space_dummy + "while" + space_dummy + reason_action + space_dummy + "object" + space_dummy + distance_dummy
+                    elif explanation_level == "descriptive":
+                        action_string_verb = description
+                    elif explanation_level == "suggestive":
+                        action_string_verb = suggestion
+                    elif explanation_level == "counterfactual":
+                        action_string_verb = counterfactual
+                    elif explanation_level == "descriptive/suggestive":
+                        action_string_verb = description + '. ' + suggestion
+                    elif explanation_level == "suggestive/counterfactual":
+                        action_string_verb = suggestion + '. ' + counterfactual
+                    elif explanation_level == "counterfactual/descriptive":
+                        action_string_verb = counterfactual + '. ' + description
+                    elif explanation_level == "descriptive/suggestive/counterfactual":
+                        action_string_verb = description + '. ' + suggestion + '. ' + counterfactual  
                 elif specificity_level == "summary":
-                    action_string_verb = robot + space_dummy + is_dummy + space_dummy + ask_for_help_dummy + space_dummy + distance_dummy_2
+                    description = robot + space_dummy + "has experienced a failure" + space_dummy + "while" + space_dummy + reason_action + space_dummy + distance_dummy_2 + space_dummy + "which is" + space_dummy + reason
+                    suggestion = "dear human, please help me" + space_dummy + reason_action + space_dummy + distance_dummy_2
+                    counterfactual = "if" + space_dummy + "object" + space_dummy + distance_dummy_2 + space_dummy + "was not" + space_dummy + reason + ',' + space_dummy + "I would be able to" + space_dummy + reason_action + space_dummy + distance_dummy_2
+                    if explanation_level == "no verb":
+                        action_string_verb = robot + space_dummy + "has experienced a failure" + space_dummy + "while" + space_dummy + reason_action + space_dummy + distance_dummy_2
+                    elif explanation_level == "descriptive":
+                        action_string_verb = description
+                    elif explanation_level == "suggestive":
+                        action_string_verb = suggestion
+                    elif explanation_level == "counterfactual":
+                        action_string_verb = counterfactual
+                    elif explanation_level == "descriptive/suggestive":
+                        action_string_verb = description + '. ' + suggestion
+                    elif explanation_level == "suggestive/counterfactual":
+                        action_string_verb = suggestion + '. ' + counterfactual
+                    elif explanation_level == "counterfactual/descriptive":
+                        action_string_verb = counterfactual + '. ' + description
+                    elif explanation_level == "descriptive/suggestive/counterfactual":
+                        action_string_verb = description + '. ' + suggestion + '. ' + counterfactual 
                 elif specificity_level == "general picture":
-                    action_string_verb = robot + space_dummy + is_dummy + space_dummy + ask_for_help_dummy
+                    description = robot + space_dummy + "has experienced a failure" + space_dummy + "while" + space_dummy + reason_action + space_dummy + "which is" + space_dummy + reason
+                    suggestion = "dear human, please help me" + space_dummy + reason_action
+                    counterfactual = "if" + space_dummy + "object" + space_dummy + "was not" + space_dummy + reason + ',' + space_dummy + "I would be able to" + space_dummy + reason_action
+                    if explanation_level == "no verb":
+                        action_string_verb = robot + space_dummy + "has experienced a failure" + space_dummy + "while" + space_dummy + reason_action
+                    elif explanation_level == "descriptive":
+                        action_string_verb = description
+                    elif explanation_level == "suggestive":
+                        action_string_verb = suggestion
+                    elif explanation_level == "counterfactual":
+                        action_string_verb = counterfactual
+                    elif explanation_level == "descriptive/suggestive":
+                        action_string_verb = description + '. ' + suggestion
+                    elif explanation_level == "suggestive/counterfactual":
+                        action_string_verb = suggestion + '. ' + counterfactual
+                    elif explanation_level == "counterfactual/descriptive":
+                        action_string_verb = counterfactual + '. ' + description
+                    elif explanation_level == "descriptive/suggestive/counterfactual":
+                        action_string_verb = description + '. ' + suggestion + '. ' + counterfactual 
 
             elif abstraction_level == "right/left":
                 if specificity_level == "detailed narrative":
@@ -348,9 +456,45 @@ for plan in plans:
                     elif explanation_level == "descriptive/suggestive/counterfactual":
                         action_string_verb = description + '. ' + suggestion + '. ' + counterfactual                    
                 elif specificity_level == "summary":
-                    pass
+                    description = robot + space_dummy + "has experienced a failure" + space_dummy + "while" + space_dummy + reason_action + space_dummy + direction_dummy_2 + space_dummy + "which is" + space_dummy + reason
+                    suggestion = "dear human, please help me" + space_dummy + reason_action + space_dummy + direction_dummy_2
+                    counterfactual = "if" + space_dummy + "object" + space_dummy + direction_dummy_2 + space_dummy + "was not" + space_dummy + reason + ',' + space_dummy + "I would be able to" + space_dummy + reason_action + space_dummy + direction_dummy_2
+                    if explanation_level == "no verb":
+                        action_string_verb = robot + space_dummy + "has experienced a failure" + space_dummy + "while" + space_dummy + reason_action + space_dummy + direction_dummy_2
+                    elif explanation_level == "descriptive":
+                        action_string_verb = description
+                    elif explanation_level == "suggestive":
+                        action_string_verb = suggestion
+                    elif explanation_level == "counterfactual":
+                        action_string_verb = counterfactual
+                    elif explanation_level == "descriptive/suggestive":
+                        action_string_verb = description + '. ' + suggestion
+                    elif explanation_level == "suggestive/counterfactual":
+                        action_string_verb = suggestion + '. ' + counterfactual
+                    elif explanation_level == "counterfactual/descriptive":
+                        action_string_verb = counterfactual + '. ' + description
+                    elif explanation_level == "descriptive/suggestive/counterfactual":
+                        action_string_verb = description + '. ' + suggestion + '. ' + counterfactual 
                 elif specificity_level == "general picture":
-                    pass
+                    description = robot + space_dummy + "has experienced a failure" + space_dummy + "while" + space_dummy + reason_action + space_dummy + "which is" + space_dummy + reason
+                    suggestion = "dear human, please help me" + space_dummy + reason_action
+                    counterfactual = "if" + space_dummy + "object" + space_dummy + "was not" + space_dummy + reason + ',' + space_dummy + "I would be able to" + space_dummy + reason_action
+                    if explanation_level == "no verb":
+                        action_string_verb = robot + space_dummy + "has experienced a failure" + space_dummy + "while" + space_dummy + reason_action
+                    elif explanation_level == "descriptive":
+                        action_string_verb = description
+                    elif explanation_level == "suggestive":
+                        action_string_verb = suggestion
+                    elif explanation_level == "counterfactual":
+                        action_string_verb = counterfactual
+                    elif explanation_level == "descriptive/suggestive":
+                        action_string_verb = description + '. ' + suggestion
+                    elif explanation_level == "suggestive/counterfactual":
+                        action_string_verb = suggestion + '. ' + counterfactual
+                    elif explanation_level == "counterfactual/descriptive":
+                        action_string_verb = counterfactual + '. ' + description
+                    elif explanation_level == "descriptive/suggestive/counterfactual":
+                        action_string_verb = description + '. ' + suggestion + '. ' + counterfactual 
         
             elif abstraction_level == "semantic annotations":
                 if specificity_level == "detailed narrative":
