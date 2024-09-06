@@ -1,0 +1,2 @@
+frame,map_costmap_resolution,map_costmap_width,map_costmap_height,map_costmap_origin_pos_x,map_costmap_origin_pos_y,map_costmap_origin_orientation_z,map_costmap_origin_orientation_w
+map,0.05,210,310,-10.5,-4.5,0,1
