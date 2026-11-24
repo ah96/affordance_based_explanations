@@ -96,7 +96,7 @@ scripts/
 launch/                explanation.launch.py
 srv/                   QSRService.srv
 ontologies/library/    ontology.csv, map_info.csv, gazebo_tags.csv
-maps/library/          occupancy map of the library and its conversion scripts
+maps/library/          occupancy map of the library (map.yaml, map.pgm) and its conversion scripts
 worlds/                Gazebo worlds of the library (SDF 1.7)
 test/                  tests of the explanation pipeline, without ROS
 figures/               the image shown above
@@ -132,3 +132,7 @@ figures/               the image shown above
   doi       = {10.1109/ICRA55743.2025.11128010}
 }
 ```
+
+## License
+
+BSD 3-Clause, see [`LICENSE`](LICENSE). The Gazebo models that the worlds refer to are not part of this repository and keep their own licenses.
