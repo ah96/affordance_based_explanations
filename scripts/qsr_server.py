@@ -1,203 +1,58 @@
-import math
-import rospy
+#!/usr/bin/env python3
+"""
+ROS 2 service node for the Qualitative Spatial Reasoning (QSR) calculus.
+
+Other nodes ask this service for the qualitative spatial relation of an
+object to the robot, so that they do not need the QSR code themselves.
+
+Service
+-------
+qsr (affordance_based_explanations/srv/QSRService)
+    Request:  float64 angle   angle of the object in radians, in the frame of
+                              the binary calculi (0 = right, +pi/2 = front)
+    Response: string value    "front", "back", "left" or "right"
+
+The node uses the modified single-cross calculus of the paper
+(``binary_qsr_choice=2``).
+
+Usage
+-----
+    ros2 run affordance_based_explanations qsr_server.py
+"""
+
+import rclpy
+from rclpy.node import Node
+
 from affordance_based_explanations.srv import QSRService
+from qsr import QSR
 
-# global variables
-PI = math.pi
 
-class QSR(object):
-    # constructor
-    def __init__(self, binary_qsr_choice, ternary_qsr_choice, R):
-        self.binary_qsr_choice = binary_qsr_choice
-        self.ternary_qsr_choice = ternary_qsr_choice
-        self.R = R    
-        self.PI = PI
+class QsrServer(Node):
 
-        self.defineBinaryQsrCalculus()
+    def __init__(self):
+        super().__init__('qsr_server')
+        # R is the close/distant threshold of ternary calculus 4, not used here.
+        self.qsr = QSR(binary_qsr_choice=2, ternary_qsr_choice=2, R=1.0)
+        self.service = self.create_service(QSRService, 'qsr', self.handle_qsr)
+        self.get_logger().info('QSR service ready: left, right, front, back.')
 
-        self.defineTernaryQsrCalculus()
+    def handle_qsr(self, request, response):
+        response.value = self.qsr.getBinaryQsrValue(request.angle)
+        self.get_logger().debug(f'angle {request.angle:.3f} -> {response.value}')
+        return response
 
-    # define binary QSR calculus
-    def defineBinaryQsrCalculus(self):
-        if self.binary_qsr_choice == 0:
-            self.binary_qsr_dict = {
-                'left': 0,
-                'right': 1
-            }
 
-        elif self.binary_qsr_choice == 1:
-            self.binary_qsr_dict = {
-                'front': 0,
-                'back': 1
-            }
+def main():
+    rclpy.init()
+    node = QsrServer()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.destroy_node()
+        rclpy.try_shutdown()
 
-        elif self.binary_qsr_choice == 2:
-            self.binary_qsr_dict = {
-                'left': 0,
-                'right': 1,
-                'front': 2,
-                'back': 3
-            }
 
-        elif self.binary_qsr_choice == 3:
-            self.binary_qsr_dict = {
-                'left/front': 0,
-                'right/front': 1,
-                'left/back': 2,
-                'right/back': 3
-            }
-
-        # used for deriving NLP annotations
-        self.binary_qsr_dict_inv = {v: k for k, v in self.binary_qsr_dict.items()}
-
-    # get binary QSR value
-    def getBinaryQsrValue(self, angle):
-        value = ''    
-
-        if self.binary_qsr_choice == 0:
-            if -self.PI/2 <= angle < self.PI/2:
-                value += 'right'
-            elif self.PI/2 <= angle < self.PI or -self.PI <= angle < -self.PI/2:
-                value += 'left'
-
-        if self.binary_qsr_choice == 1:
-            if 0 <= angle < self.PI:
-                value += 'front'
-            elif - self.PI <= angle < 0:
-                value += 'back'
-
-        elif self.binary_qsr_choice == 2:
-            if 3*self.PI/4 <= angle < self.PI or -self.PI <= angle < -3*self.PI/4:
-                value += 'left'
-            elif -self.PI/4 <= angle < self.PI/4:
-                value += 'right'
-            elif self.PI/4 <= angle < 3*self.PI/4:
-                value += 'front'
-            elif -3*self.PI/4 <= angle < -self.PI/4:
-                value += 'back'
-
-        elif self.binary_qsr_choice == 3:
-            if 0 <= angle < self.PI/2:
-                value += 'left/front'
-            elif self.PI/2 <= angle <= self.PI:
-                value += 'left/back'
-            elif -self.PI/2 <= angle < 0:
-                value += 'right/front'
-            elif -self.PI <= angle < -self.PI/2:
-                value += 'right/back'
-
-        return value
-
-    # define ternary QSR calculus
-    def defineTernaryQsrCalculus(self):
-        if self.ternary_qsr_choice == 0:
-            self.ternary_qsr_dict = {
-                'left': 0,
-                'right': 1
-            }
-
-        if self.ternary_qsr_choice == 1:
-            self.ternary_qsr_dict = {
-                'front': 0,
-                'back': 1
-            }
-
-        elif self.ternary_qsr_choice == 2:
-            self.ternary_qsr_dict = {
-                'left': 0,
-                'right': 1,
-                'front': 2,
-                'back': 3
-            }
-
-        elif self.ternary_qsr_choice == 3:
-            self.ternary_qsr_dict = {
-                'left/front': 0,
-                'right/front': 1,
-                'left/back': 2,
-                'right/back': 3
-            }
-
-        elif self.ternary_qsr_choice == 4:
-            self.ternary_qsr_dict = {
-                'cl': 0,
-                'dl': 1,
-                'cr': 2,
-                'dr': 3,
-                'cb': 4,
-                'db': 5,
-                'cf': 6,
-                'df': 7
-                }
-
-        # used for deriving NLP annotations
-        self.ternary_qsr_dict_inv = {v: k for k, v in self.ternary_qsr_dict.items()}
-
-    # get ternary QSR value
-    def getTernaryQsrValue(self, r, angle, R):
-        value = ''    
-
-        if self.ternary_qsr_choice == 0:
-            if -self.PI <= angle < 0:
-                value += 'right'
-            else:
-                value += 'left'
-
-        
-        elif self.ternary_qsr_choice == 1:
-            if -self.PI/2 <= angle < self.PI/2:
-                value += 'front'
-            else:
-                value += 'back'
-
-        elif self.ternary_qsr_choice == 2:
-            if -self.PI/4 <= angle <= self.PI/4:
-                value += 'front'
-            elif self.PI/4 < angle < 3*self.PI/4:
-                value += 'left'
-            elif 3*self.PI/4 <= angle or angle <= -3*self.PI/4:
-                value += 'back'
-            elif -3*self.PI/4 < angle < -self.PI/4:
-                value += 'right'     
-
-        elif self.ternary_qsr_choice == 3:
-            if 0 <= angle < self.PI/2:
-                value += 'left/front'
-            elif self.PI/2 <= angle <= self.PI:
-                value += 'left/back'
-            elif -self.PI/2 <= angle < 0:
-                value += 'right/front'
-            elif -self.PI <= angle < -self.PI/2:
-                value += 'right/back'
-
-        elif self.ternary_qsr_choice == 4:
-            if r<=R:
-                value += 'c'
-            else:
-                value += 'd'
-
-            if -self.PI/4 <= angle <= self.PI/4:
-                value += 'front'
-            elif self.PI/4 < angle < 3*self.PI/4:
-                value += 'left'
-            elif 3*self.PI/4 <= angle or angle <= -3*self.PI/4:
-                value += 'back'
-            elif -3*self.PI/4 < angle < -self.PI/4:
-                value += 'right' 
-
-        return value
-
-qsr_global = QSR(1,1,1)
-    
-def handle_qsr(req):
-    print("Returning spatial value")
-    return qsr_global.getBinaryQsrValue(req.angle)
-
-def qsr_server():
-    rospy.init_node('qsr_server')
-    s = rospy.Service('qsr', QSRService, handle_qsr)
-    print("Ready to return spatial value.")
-    rospy.spin()
-
-if __name__ == "__main__":
-    qsr_server()
+if __name__ == '__main__':
+    main()

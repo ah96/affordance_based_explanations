@@ -1,0 +1,10 @@
+# Python byte code, written when a script is run
+__pycache__/
+*.py[cod]
+.pytest_cache/
+# colcon output, in case the package is built inside the checkout
+build/
+install/
+log/
+# audio written by the speech demos (gtts_run.py, polly_run.py)
+output.mp3
