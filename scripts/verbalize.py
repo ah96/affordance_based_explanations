@@ -1,827 +1,775 @@
 #!/usr/bin/env python3
+"""
+Textual affordance-based explanations and the Verbalization Space.
 
-plans = [["goto_waypoint tiago social_room corridor","failure tiago passing door_3 doorway closed","open tiago door_3","pass_through tiago door_3","goto_waypoint tiago corridor common_zone","goto_waypoint tiago common_zone book_zone","goto_waypoint tiago book_zone bookshelf_2","deviation tiago human_1","fetch tiago book bookshelf_2","failure tiago fetching book bookshelf_2 too_high","ask_for_help tiago human_5","goto_waypoint tiago bookshelf_2 common_zone","goto_waypoint tiago common_zone corridor","goto_waypoint tiago corridor social_room"],
-["goto_waypoint tiago reading_zone common_zone","deviation tiago human_13","goto_waypoint tiago common_zone book_zone","goto_waypoint tiago book_zone bookshelf_14","pass_between tiago bookshelf_8 bookshelf_12","pass_between tiago bookshelf_9 bookshelf_13","fetch tiago book bookshelf_14","goto_waypoint tiago book_zone bookshelf_14","pass_between tiago bookshelf_9 bookshelf_13","pass_between tiago bookshelf_8 bookshelf_12","goto_waypoint tiago book_zone common_zone","deviation tiago human_15","goto_waypoint tiago common_zone book_zone"],
-["goto_waypoint tiago computer_room corridor","pass_through tiago door_2","goto_waypoint tiago corridor common_zone","goto_waypoint tiago common_zone book_zone","goto_waypoint tiago book_zone bookshelf_5","deviation tiago human_2","fetch tiago book bookshelf_5","failure tiago fetching book bookshelf_5 too_high","ask_for_help tiago human_7","goto_waypoint tiago bookshelf_2 common_zone","goto_waypoint tiago common_zone corridor","goto_waypoint tiago corridor computer_room","failure tiago passing door_2 doorway closed","open tiago door_2"],
-["goto_waypoint tiago reading_zone common_zone","deviation tiago human_19","goto_waypoint tiago common_zone book_zone","goto_waypoint tiago book_zone bookshelf_8","pass_between tiago bookshelf_6 bookshelf_11","pass_between tiago bookshelf_5 bookshelf_7","fetch tiago book bookshelf_8","goto_waypoint tiago book_zone bookshelf_8","pass_between tiago bookshelf_5 bookshelf_7","pass_between tiago bookshelf_6 bookshelf_11","goto_waypoint tiago book_zone common_zone","deviation tiago human_4","goto_waypoint tiago common_zone book_zone"],
-["goto_waypoint tiago social_room corridor","pass_through tiago door_3","goto_waypoint tiago corridor common_zone","goto_waypoint tiago common_zone book_zone","goto_waypoint tiago book_zone bookshelf_5","deviation tiago human_5","fetch tiago book bookshelf_5","failure tiago fetching book bookshelf_5 too_high","ask_for_help tiago human_6","goto_waypoint tiago bookshelf_5 common_zone","goto_waypoint tiago common_zone corridor","goto_waypoint tiago corridor social_room","failure tiago passing door_3 doorway closed","open tiago door_3"],
-["goto_waypoint tiago computer_room corridor","failure tiago passing door_2 doorway closed","open tiago door_2","pass_through tiago door_2","goto_waypoint tiago corridor common_zone","goto_waypoint tiago common_zone book_zone","goto_waypoint tiago book_zone bookshelf_9","deviation tiago human_9","fetch tiago book bookshelf_9","failure tiago fetching book bookshelf_9 too_low","ask_for_help tiago human_9","goto_waypoint tiago bookshelf_9 common_zone","goto_waypoint tiago common_zone corridor","goto_waypoint tiago corridor computer_room"],
-["goto_waypoint tiago information_desk_zone corridor","deviation tiago human_9","deviation tiago human_8","goto_waypoint tiago common_zone book_zone","goto_waypoint tiago book_zone bookshelf_9","pass_between tiago bookshelf_6 bookshelf_11","pass_between tiago bookshelf_7 bookshelf_10","fetch tiago book bookshelf_9","failure tiago fetching book bookshelf_9 too_high","ask_for_help tiago human_3","goto_waypoint tiago bookshelf_9 book_zone","goto_waypoint tiago book_zone common_zone","goto_waypoint tiago common_zone reading_zone","failure tiago returning book information_desk_zone wrong_zone","goto_waypoint tiago reading_zone common_zone","goto_waypoint tiago common_zone information_desk_zone"],
-["goto_waypoint tiago social_room corridor","pass_through tiago door_3","goto_waypoint tiago corridor common_zone","failure tiago goto_waypoint common_zone common_zone chair_2","ask_for_help tiago human_9","goto_waypoint tiago common_zone information_desk_zone","deviation tiago human_8","fetch tiago book information_desk","goto_waypoint tiago information_desk_zone common_zone","goto_waypoint tiago common_zone corridor","goto_waypoint tiago corridor social_room","pass_through tiago door_3","deviation tiago human_4"],
-["goto_waypoint tiago reading_zone common_zone","deviation tiago human_8","deviation tiago human_1","goto_waypoint tiago common_zone corridor","failure tiago passing door_3 doorway closed","open tiago door_3","pass_through tiago door_3","fetch tiago book information_desk","failure tiago fetching coffee coffee_table too_high","ask_for_help tiago human_9","goto_waypoint tiago social_room corridor","goto_waypoint tiago corridor common_zone","deviation tiago human_1","goto_waypoint tiago common_zone reading_zone"],
-["goto_waypoint tiago information_desk_zone common_zone","deviation tiago human_4","deviation tiago human_5","goto_waypoint tiago common_zone corridor","failure tiago passing door_3 doorway closed","open tiago door_3","pass_through tiago door_3","fetch tiago book information_desk","failure tiago fetching coffee coffee_table too_far","ask_for_help tiago human_9","goto_waypoint tiago social_room corridor","goto_waypoint tiago corridor common_zone","goto_waypoint tiago common_zone information_desk_zone"]]
+Implements two parts of "Affordance-Based Explanations of Robot Navigation"
+(Halilovic and Krivic, ICRA 2025).
+
+Textual explanations (Section IV-B)
+    ``verbalize_explanation`` turns a core explanation into a descriptive,
+    suggestive or counterfactual sentence in the first person.  This is
+    ``Verbalize(core_explanation, QSR)`` of Algorithm 1.  The QSR gives the
+    spatial relation of each object to the robot ("in front of me").
+
+Verbalization Space (Section IV-C, Table I)
+    ``verbalize_plan`` verbalizes a task plan under four parameters.
+
+    Abstraction (A)   how places and objects are referred to
+        A1  coordinates             A2  angles/distances
+        A3  right/left              A4  semantic annotations
+    Locality (L)      which part of the plan is verbalized
+        L1  complete plan           L2  range of actions
+        L3  action or object
+    Specificity (S)   how much detail an action gets
+        S1  general picture         S2  summary
+        S3  detailed narrative
+    Explanation (E)   how failure and deviation actions are verbalized
+        E1  no verbalization as an affordance-based explanation
+        E2  descriptive             E3  suggestive
+        E4  counterfactual
+
+Verbalization space experiment (Section VI-B)
+    ``compute_word_count_stats`` verbalizes the ten library plans under the
+    combinations of A, S and E and returns the average number of words per
+    plan.  ``figure_tables`` reduces them to the three tables of Fig. 8.
+
+Usage
+-----
+    python3 verbalize.py        # prints the tables of the experiment
+"""
+
+# ---------------------------------------------------------------------------
+# The ten plans of the library domain used in the experiment (Section VI-B).
+# An action is a string of tokens separated by spaces:
+#   goto_waypoint <robot> <from> <to>
+#   pass_through  <robot> <object>
+#   pass_between  <robot> <object> <object>
+#   open          <robot> <object>
+#   fetch         <robot> <item> <place>
+#   ask_for_help  <robot> <human>
+#   failure       <robot> <failed action> <object> <place> <reason>
+#   deviation     <robot> <object>
+# ---------------------------------------------------------------------------
+
+_RAW_PLANS = [
+    [
+        "goto_waypoint tiago social_room corridor",
+        "failure tiago passing door_3 doorway closed",
+        "open tiago door_3",
+        "pass_through tiago door_3",
+        "goto_waypoint tiago corridor common_zone",
+        "goto_waypoint tiago common_zone book_zone",
+        "goto_waypoint tiago book_zone bookshelf_2",
+        "deviation tiago human_1",
+        "fetch tiago book bookshelf_2",
+        "failure tiago fetching book bookshelf_2 too_high",
+        "ask_for_help tiago human_5",
+        "goto_waypoint tiago bookshelf_2 common_zone",
+        "goto_waypoint tiago common_zone corridor",
+        "goto_waypoint tiago corridor social_room",
+    ],
+    [
+        "goto_waypoint tiago reading_zone common_zone",
+        "deviation tiago human_13",
+        "goto_waypoint tiago common_zone book_zone",
+        "goto_waypoint tiago book_zone bookshelf_14",
+        "pass_between tiago bookshelf_8 bookshelf_12",
+        "pass_between tiago bookshelf_9 bookshelf_13",
+        "fetch tiago book bookshelf_14",
+        "goto_waypoint tiago book_zone bookshelf_14",
+        "pass_between tiago bookshelf_9 bookshelf_13",
+        "pass_between tiago bookshelf_8 bookshelf_12",
+        "goto_waypoint tiago book_zone common_zone",
+        "deviation tiago human_15",
+        "goto_waypoint tiago common_zone book_zone",
+    ],
+    [
+        "goto_waypoint tiago computer_room corridor",
+        "pass_through tiago door_2",
+        "goto_waypoint tiago corridor common_zone",
+        "goto_waypoint tiago common_zone book_zone",
+        "goto_waypoint tiago book_zone bookshelf_5",
+        "deviation tiago human_2",
+        "fetch tiago book bookshelf_5",
+        "failure tiago fetching book bookshelf_5 too_high",
+        "ask_for_help tiago human_7",
+        "goto_waypoint tiago bookshelf_2 common_zone",
+        "goto_waypoint tiago common_zone corridor",
+        "goto_waypoint tiago corridor computer_room",
+        "failure tiago passing door_2 doorway closed",
+        "open tiago door_2",
+    ],
+    [
+        "goto_waypoint tiago reading_zone common_zone",
+        "deviation tiago human_19",
+        "goto_waypoint tiago common_zone book_zone",
+        "goto_waypoint tiago book_zone bookshelf_8",
+        "pass_between tiago bookshelf_6 bookshelf_11",
+        "pass_between tiago bookshelf_5 bookshelf_7",
+        "fetch tiago book bookshelf_8",
+        "goto_waypoint tiago book_zone bookshelf_8",
+        "pass_between tiago bookshelf_5 bookshelf_7",
+        "pass_between tiago bookshelf_6 bookshelf_11",
+        "goto_waypoint tiago book_zone common_zone",
+        "deviation tiago human_4",
+        "goto_waypoint tiago common_zone book_zone",
+    ],
+    [
+        "goto_waypoint tiago social_room corridor",
+        "pass_through tiago door_3",
+        "goto_waypoint tiago corridor common_zone",
+        "goto_waypoint tiago common_zone book_zone",
+        "goto_waypoint tiago book_zone bookshelf_5",
+        "deviation tiago human_5",
+        "fetch tiago book bookshelf_5",
+        "failure tiago fetching book bookshelf_5 too_high",
+        "ask_for_help tiago human_6",
+        "goto_waypoint tiago bookshelf_5 common_zone",
+        "goto_waypoint tiago common_zone corridor",
+        "goto_waypoint tiago corridor social_room",
+        "failure tiago passing door_3 doorway closed",
+        "open tiago door_3",
+    ],
+    [
+        "goto_waypoint tiago computer_room corridor",
+        "failure tiago passing door_2 doorway closed",
+        "open tiago door_2",
+        "pass_through tiago door_2",
+        "goto_waypoint tiago corridor common_zone",
+        "goto_waypoint tiago common_zone book_zone",
+        "goto_waypoint tiago book_zone bookshelf_9",
+        "deviation tiago human_9",
+        "fetch tiago book bookshelf_9",
+        "failure tiago fetching book bookshelf_9 too_low",
+        "ask_for_help tiago human_9",
+        "goto_waypoint tiago bookshelf_9 common_zone",
+        "goto_waypoint tiago common_zone corridor",
+        "goto_waypoint tiago corridor computer_room",
+    ],
+    [
+        "goto_waypoint tiago information_desk_zone corridor",
+        "deviation tiago human_9",
+        "deviation tiago human_8",
+        "goto_waypoint tiago common_zone book_zone",
+        "goto_waypoint tiago book_zone bookshelf_9",
+        "pass_between tiago bookshelf_6 bookshelf_11",
+        "pass_between tiago bookshelf_7 bookshelf_10",
+        "fetch tiago book bookshelf_9",
+        "failure tiago fetching book bookshelf_9 too_high",
+        "ask_for_help tiago human_3",
+        "goto_waypoint tiago bookshelf_9 book_zone",
+        "goto_waypoint tiago book_zone common_zone",
+        "goto_waypoint tiago common_zone reading_zone",
+        "failure tiago returning book information_desk_zone wrong_zone",
+        "goto_waypoint tiago reading_zone common_zone",
+        "goto_waypoint tiago common_zone information_desk_zone",
+    ],
+    [
+        "goto_waypoint tiago social_room corridor",
+        "pass_through tiago door_3",
+        "goto_waypoint tiago corridor common_zone",
+        "failure tiago goto_waypoint common_zone common_zone chair_2",
+        "ask_for_help tiago human_9",
+        "goto_waypoint tiago common_zone information_desk_zone",
+        "deviation tiago human_8",
+        "fetch tiago book information_desk",
+        "goto_waypoint tiago information_desk_zone common_zone",
+        "goto_waypoint tiago common_zone corridor",
+        "goto_waypoint tiago corridor social_room",
+        "pass_through tiago door_3",
+        "deviation tiago human_4",
+    ],
+    [
+        "goto_waypoint tiago reading_zone common_zone",
+        "deviation tiago human_8",
+        "deviation tiago human_1",
+        "goto_waypoint tiago common_zone corridor",
+        "failure tiago passing door_3 doorway closed",
+        "open tiago door_3",
+        "pass_through tiago door_3",
+        "fetch tiago book information_desk",
+        "failure tiago fetching coffee coffee_table too_high",
+        "ask_for_help tiago human_9",
+        "goto_waypoint tiago social_room corridor",
+        "goto_waypoint tiago corridor common_zone",
+        "deviation tiago human_1",
+        "goto_waypoint tiago common_zone reading_zone",
+    ],
+    [
+        "goto_waypoint tiago information_desk_zone common_zone",
+        "deviation tiago human_4",
+        "deviation tiago human_5",
+        "goto_waypoint tiago common_zone corridor",
+        "failure tiago passing door_3 doorway closed",
+        "open tiago door_3",
+        "pass_through tiago door_3",
+        "fetch tiago book information_desk",
+        "failure tiago fetching coffee coffee_table too_far",
+        "ask_for_help tiago human_9",
+        "goto_waypoint tiago social_room corridor",
+        "goto_waypoint tiago corridor common_zone",
+        "goto_waypoint tiago common_zone information_desk_zone",
+    ],
+]
+
+PLANS = [[action.split() for action in plan] for plan in _RAW_PLANS]
+
+# ---------------------------------------------------------------------------
+# Parameters of the Verbalization Space (Table I)
+# ---------------------------------------------------------------------------
+
+ABSTRACTION_LEVELS = [
+    'coordinates',           # A1
+    'angles/distances',      # A2
+    'right/left',            # A3
+    'semantic annotations',  # A4
+]
+
+LOCALITY_LEVELS = [
+    'complete plan',     # L1
+    'range of actions',  # L2
+    'action or object',  # L3
+]
+
+SPECIFICITY_LEVELS = [
+    'general picture',     # S1
+    'summary',             # S2
+    'detailed narrative',  # S3
+]
+
+EXPLANATION_LEVELS = [
+    'no verb',         # E1
+    'descriptive',     # E2
+    'suggestive',      # E3
+    'counterfactual',  # E4
+    # Combinations of the three types.  They are not levels of Table I.
+    'descriptive/suggestive',
+    'suggestive/counterfactual',
+    'counterfactual/descriptive',
+    'descriptive/suggestive/counterfactual',
+]
+
+#: The four levels E1 to E4 of Table I, which Fig. 8 shows.
+TABLE_EXPLANATION_LEVELS = EXPLANATION_LEVELS[:4]
+
+# ---------------------------------------------------------------------------
+# References to places and objects below the semantic level (A1 to A3).
+# The experiment counts words, so one fixed reference stands for every place:
+# a coordinate triple has the same number of words whatever its values are.
+# The detailed narrative uses the long form, the summary the short form.
+# ---------------------------------------------------------------------------
+
+_REFERENCES = {
+    'coordinates': ("zone with coordinates x = 0.0, y = 0.0, z = 0.0",
+                    "x = 0.0, y = 0.0, z = 0.0"),
+    'angles/distances': ("place x meters away", "place x"),
+    'right/left': ("place on its left", "on its left"),
+}
 
 
-def split_strings(list_of_lists):
+def _reference(abstraction, specificity):
+    """Return the reference to a place or object for the levels A1 to A3."""
+    long_form, short_form = _REFERENCES[abstraction]
+    return long_form if specificity == 'detailed narrative' else short_form
+
+
+# ---------------------------------------------------------------------------
+# Verbalization of one plan action
+# ---------------------------------------------------------------------------
+
+def _verbalize_goto(robot, wp1, wp2, abstraction, specificity):
+    if specificity == 'general picture':
+        return f"{robot} is navigating"
+    if abstraction == 'semantic annotations':
+        return f"{robot} is navigating from {wp1} to {wp2}"
+    ref = _reference(abstraction, specificity)
+    return f"{robot} is navigating from {ref} to {ref}"
+
+
+def _verbalize_pass_through(robot, obj, abstraction, specificity):
+    if specificity == 'general picture':
+        return f"{robot} is passing through"
+    if abstraction != 'semantic annotations':
+        obj = _reference(abstraction, specificity)
+    # The space at the end is kept from the script of the experiment.  Its
+    # word count splits at single spaces, so the space counts as one word.
+    return f"{robot} is passing through {obj} "
+
+
+def _verbalize_pass_between(robot, obj1, obj2, abstraction, specificity):
+    if specificity == 'general picture':
+        return f"{robot} is passing between"
+    if abstraction == 'semantic annotations':
+        return f"{robot} is passing between {obj1} and {obj2}"
+    ref = _reference(abstraction, specificity)
+    return f"{robot} is passing between {ref} and {ref}"
+
+
+def _verbalize_open(robot, obj, abstraction, specificity):
+    if specificity == 'general picture':
+        return f"{robot} is opening"
+    if abstraction != 'semantic annotations':
+        obj = _reference(abstraction, specificity)
+    # The space at the end is kept, see _verbalize_pass_through.
+    return f"{robot} is opening {obj} "
+
+
+def _verbalize_fetch(robot, obj, place, abstraction, specificity):
+    if specificity == 'general picture':
+        return f"{robot} is fetching"
+    if abstraction == 'semantic annotations':
+        return f"{robot} is fetching {obj} from {place}"
+    ref = _reference(abstraction, specificity)
+    return f"{robot} is fetching {ref} from {ref}"
+
+
+def _verbalize_ask_for_help(robot, obj, abstraction, specificity):
+    if specificity == 'general picture':
+        return f"{robot} is asking for help"
+    if abstraction == 'semantic annotations':
+        return f"{robot} is asking for help {obj}"
+    ref = _reference(abstraction, specificity)
+    return f"{robot} is asking for help {ref}"
+
+
+def _failure_phrases(robot, failed_action, obj, place, reason,
+                     abstraction, specificity):
     """
-    Split every string in each sublist into words.
+    Return the four verbalizations of a failure action.
 
-    Args:
-    list_of_lists (list of list of str): A list containing 10 sublists, where each sublist contains strings.
-
-    Returns:
-    list of list of list of str: A list containing 10 sublists, where each sublist contains lists of words.
+    The tuple holds the plain statement of level E1 and the descriptive,
+    suggestive and counterfactual explanations of the levels E2 to E4.
     """
-    # Initialize an empty list to hold the result
-    split_words = []
+    start = f"{robot} has experienced a failure while {failed_action}"
+    help_me = f"dear human, please help me {failed_action}"
 
-    # Iterate over each sublist in the list of lists
-    for sublist in list_of_lists:
-        # Initialize an empty list to hold the split words for the current sublist
-        sublist_split_words = []
-        #print("sublist = ", sublist)
-        # Iterate over each string in the current sublist
-        for string in sublist:
-            # Split the string into words and add to the sublist_split_words
-            words = string.split(' ')
-            sublist_split_words.append(words)
+    if abstraction == 'semantic annotations':
+        if specificity == 'detailed narrative':
+            plain = f"{start} {obj} at {place}"
+            description = f"{start} {obj} at {place} which is {reason}"
+            suggestion = f"{help_me} {obj} at {place}"
+            counterfactual = (f"if {obj} at {place} was not {reason}, "
+                              f"I would be able to {failed_action} {obj} from {place}")
+        else:
+            plain = start if specificity == 'general picture' else f"{start} {obj}"
+            description = f"{start} {obj} which is {reason}"
+            suggestion = f"{help_me} {obj} which is {reason}"
+            counterfactual = (f"if {obj} was not {reason}, "
+                              f"I would be able to {failed_action} {obj}")
+        return plain, description, suggestion, counterfactual
 
-        # Add the split words for the current sublist to the main list
-        split_words.append(sublist_split_words)
+    if specificity == 'general picture':
+        plain = start
+        description = f"{start} which is {reason}"
+        suggestion = help_me
+        counterfactual = (f"if object was not {reason}, "
+                          f"I would be able to {failed_action}")
+        return plain, description, suggestion, counterfactual
 
-    return split_words
+    ref = _reference(abstraction, specificity)
+    if specificity == 'summary':
+        plain = f"{start} {ref}"
+        description = f"{start} {ref} which is {reason}"
+        suggestion = f"{help_me} {ref}"
+        counterfactual = (f"if object {ref} was not {reason}, "
+                          f"I would be able to {failed_action} {ref}")
+    else:  # detailed narrative
+        plain = f"{start} object {ref}"
+        if abstraction == 'coordinates':
+            # Level A1 names the place of the object a second time.
+            description = f"{start} object {ref} which is {ref} {reason}"
+        else:
+            description = f"{start} object {ref} which is {reason}"
+        suggestion = f"{help_me} object {ref}"
+        counterfactual = (f"if object {ref} was not {reason}, "
+                          f"I would be able to {failed_action} object {ref}")
+    return plain, description, suggestion, counterfactual
 
-# Call the function with the example list
-plans = split_strings(plans)
 
-# Print the result
-#for plan in plans:
-#    print(plan)
+def _deviation_phrases(robot, obj, abstraction, specificity):
+    """
+    Return the four verbalizations of a deviation action, as _failure_phrases.
 
-# possible actions: goto_waypoint, pass_through, pass_between, open, fetch, ask_for_help, failure, deviation 
+    The object that causes a deviation is movable, which the explanations of
+    the levels E2 to E4 state.
+    """
+    start = f"{robot} has experienced a deviation while navigating"
+    smoothly = "I would be able to continue navigating more smoothly"
+    please = "can you please move, so I can continue navigating more smoothly"
 
-abstraction_levels = ["coordinates","angles/distances","right/left","semantic annotations"]
-specificity_levels = ["general picture","summary","detailed narrative"]
-explanation_levels = ["no verb","descriptive","suggestive","counterfactual","descriptive/suggestive","suggestive/counterfactual","counterfactual/descriptive","descriptive/suggestive/counterfactual"]
+    if specificity == 'general picture':
+        return (start, start, f"dear object, {please}",
+                f"if object was not there, {smoothly}")
 
-abstraction_level = abstraction_levels[0]
-specificity_level = specificity_levels[2]
-explanation_level = explanation_levels[3]
+    if abstraction != 'semantic annotations':
+        obj = _reference(abstraction, specificity)
+    plain = f"{start} because of {obj}"
+    if specificity == 'summary':
+        description = f"{start} because of movable {obj}"
+        suggestion = f"dear movable {obj}, {please}"
+        counterfactual = f"if movable {obj} was not there, {smoothly}"
+    else:  # detailed narrative
+        description = (f"{start} because of movable {obj} "
+                       f"which is in front of it")
+        suggestion = f"dear movable {obj} in front of me, {please}"
+        counterfactual = f"if movable {obj} was not in front of me, {smoothly}"
+    return plain, description, suggestion, counterfactual
 
-space_dummy = " "
-navigating_dummy = "navigating"
-is_dummy = "is"
-navigating_from_dummy = "navigating from"
-to_dummy = "to"
-and_dummy = "and"
-from_dummy = "from"
 
-coord_dummy = "zone with coordinates x = 0.0, y = 0.0, z = 0.0"
-coord_dummy_2 = "x = 0.0, y = 0.0, z = 0.0"
+def _select_explanation(plain, description, suggestion, counterfactual,
+                        explanation):
+    """Return the verbalization of a failure or deviation for the level E."""
+    if explanation == 'no verb':
+        return plain
+    phrases = {'descriptive': description, 'suggestive': suggestion,
+               'counterfactual': counterfactual}
+    return '. '.join(phrases[part] for part in explanation.split('/'))
 
-distance_dummy = "place x meters away"
-distance_dummy_2 = "place x"
 
-direction_dummy = "place on its left"
-direction_dummy_2 = "on its left"
+def verbalize_action(tokens, abstraction, specificity, explanation):
+    """
+    Verbalize one plan action.
 
-pass_through_dummy = "passing through"
-pass_between_dummy = "passing between"
-open_dummy = "opening"
-fetch_dummy = "fetching"
-ask_for_help_dummy = 'asking for help'
+    Parameters
+    ----------
+    tokens : list of str
+        The action, for example ``['open', 'tiago', 'door_3']``.
+    abstraction, specificity, explanation : str
+        One of ``ABSTRACTION_LEVELS``, ``SPECIFICITY_LEVELS`` and
+        ``EXPLANATION_LEVELS``.
 
-for abstraction_level in abstraction_levels:
-    for specificity_level in specificity_levels:
-        for explanation_level in explanation_levels:
-            words_avg = 0.0
-            words_plan_sum = 0.0
-            for plan in plans:
-                for action_string in plan:
-                    action = action_string[0]
-                    #print('action = ', action)
-                    robot = action_string[1]
-                    #print('robot = ', robot)
+    Returns
+    -------
+    str
+        The verbalization, or ``''`` for an action name that is not known.
+    """
+    if len(tokens) < 2:
+        return ''
+    action, robot = tokens[0], tokens[1]
+    args = tokens[2:] + ['?'] * 4  # missing arguments are verbalized as '?'
 
-                    action_string_verb = ""
+    if action == 'goto_waypoint':
+        return _verbalize_goto(robot, args[0], args[1], abstraction, specificity)
+    if action == 'pass_through':
+        return _verbalize_pass_through(robot, args[0], abstraction, specificity)
+    if action == 'pass_between':
+        return _verbalize_pass_between(robot, args[0], args[1],
+                                       abstraction, specificity)
+    if action == 'open':
+        return _verbalize_open(robot, args[0], abstraction, specificity)
+    if action == 'fetch':
+        return _verbalize_fetch(robot, args[0], args[1], abstraction, specificity)
+    if action == 'ask_for_help':
+        return _verbalize_ask_for_help(robot, args[0], abstraction, specificity)
+    if action == 'failure':
+        phrases = _failure_phrases(robot, args[0], args[1], args[2], args[3],
+                                   abstraction, specificity)
+        return _select_explanation(*phrases, explanation)
+    if action == 'deviation':
+        phrases = _deviation_phrases(robot, args[0], abstraction, specificity)
+        return _select_explanation(*phrases, explanation)
+    return ''
 
-                    if action == "goto_waypoint":
-                        wp1 = action_string[2]
-                        wp2 = action_string[3]
 
-                        if abstraction_level == "coordinates":
-                            if specificity_level == "detailed narrative":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + navigating_from_dummy + space_dummy + coord_dummy + space_dummy + to_dummy + space_dummy + coord_dummy
-                            elif specificity_level == "summary":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + navigating_from_dummy + space_dummy + coord_dummy_2 + space_dummy + to_dummy + space_dummy + coord_dummy_2
-                            elif specificity_level == "general picture":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + navigating_dummy
+def verbalize_plan(plan, abstraction, locality, specificity, explanation,
+                   locality_range=None, locality_action=None,
+                   locality_object=None):
+    """
+    Verbalize a plan under the four parameters of the Verbalization Space.
 
-                        elif abstraction_level == "angles/distances":
-                            if specificity_level == "detailed narrative":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + navigating_from_dummy + space_dummy + distance_dummy + space_dummy + to_dummy + space_dummy + distance_dummy
-                            elif specificity_level == "summary":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + navigating_from_dummy + space_dummy + distance_dummy_2 + space_dummy + to_dummy + space_dummy + distance_dummy_2
-                            elif specificity_level == "general picture":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + navigating_dummy
+    Parameters
+    ----------
+    plan : list of list of str
+        The actions of the plan as token lists.
+    abstraction, locality, specificity, explanation : str
+        One level of each parameter.
+    locality_range : tuple(int, int) or None
+        For ``'range of actions'`` (L2): the slice of the plan to verbalize.
+    locality_action : str or None
+        For ``'action or object'`` (L3): the action name to verbalize.
+    locality_object : str or None
+        For ``'action or object'`` (L3): verbalize the actions that have this
+        object as a parameter.
 
-                        elif abstraction_level == "right/left":
-                            if specificity_level == "detailed narrative":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + navigating_from_dummy + space_dummy + direction_dummy + space_dummy + to_dummy + space_dummy + direction_dummy
-                            elif specificity_level == "summary":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + navigating_from_dummy + space_dummy + direction_dummy_2 + space_dummy + to_dummy + space_dummy + direction_dummy_2
-                            elif specificity_level == "general picture":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + navigating_dummy
-                    
-                        elif abstraction_level == "semantic annotations":
-                            if specificity_level == "detailed narrative":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + navigating_from_dummy + space_dummy + wp1 + space_dummy + to_dummy + space_dummy + wp2
-                            elif specificity_level == "summary":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + navigating_from_dummy + space_dummy + wp1 + space_dummy + to_dummy + space_dummy + wp2
-                            elif specificity_level == "general picture":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + navigating_dummy
+    Returns
+    -------
+    list of str
+        One sentence per verbalized action.
+    """
+    if locality == 'range of actions':
+        if locality_range is None:
+            raise ValueError("locality 'range of actions' needs locality_range")
+        actions = plan[locality_range[0]:locality_range[1]]
+    elif locality == 'action or object':
+        if locality_action is None and locality_object is None:
+            raise ValueError("locality 'action or object' needs "
+                             "locality_action or locality_object")
+        actions = [
+            tokens for tokens in plan
+            if tokens[0] == locality_action or locality_object in tokens[2:]
+        ]
+    else:
+        actions = plan
 
-                    elif action == "pass_through":
-                        object = action_string[2]
+    sentences = [verbalize_action(tokens, abstraction, specificity, explanation)
+                 for tokens in actions]
+    return [sentence for sentence in sentences if sentence]
 
-                        if abstraction_level == "coordinates":
-                            if specificity_level == "detailed narrative":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + pass_through_dummy + space_dummy + coord_dummy + space_dummy
-                            elif specificity_level == "summary":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + pass_through_dummy + space_dummy + coord_dummy_2 + space_dummy
-                            elif specificity_level == "general picture":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + pass_through_dummy
 
-                        elif abstraction_level == "angles/distances":
-                            if specificity_level == "detailed narrative":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + pass_through_dummy + space_dummy + distance_dummy + space_dummy
-                            elif specificity_level == "summary":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + pass_through_dummy + space_dummy + distance_dummy_2 + space_dummy
-                            elif specificity_level == "general picture":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + pass_through_dummy
+# ---------------------------------------------------------------------------
+# Textual affordance-based explanations (Section IV-B)
+# ---------------------------------------------------------------------------
 
-                        elif abstraction_level == "right/left":
-                            if specificity_level == "detailed narrative":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + pass_through_dummy + space_dummy + direction_dummy + space_dummy
-                            elif specificity_level == "summary":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + pass_through_dummy + space_dummy + direction_dummy_2 + space_dummy
-                            elif specificity_level == "general picture":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + pass_through_dummy
-                    
-                        elif abstraction_level == "semantic annotations":
-                            if specificity_level == "detailed narrative":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + pass_through_dummy + space_dummy + object + space_dummy
-                            elif specificity_level == "summary":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + pass_through_dummy + space_dummy + object + space_dummy
-                            elif specificity_level == "general picture":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + pass_through_dummy
+#: The qualitative spatial relations of the modified single-cross calculus,
+#: as the robot says them.
+DIRECTION_PHRASES = {
+    'front': 'in front of me',
+    'back': 'behind me',
+    'left': 'left of me',
+    'right': 'right of me',
+}
 
-                    elif action == "pass_between":
-                        wp1 = action_string[2]
-                        wp2 = action_string[3]
+#: Name of a person in the ontology.  A person is asked to "move yourself".
+HUMAN = 'human'
 
-                        if abstraction_level == "coordinates":
-                            if specificity_level == "detailed narrative":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + pass_between_dummy + space_dummy + coord_dummy + space_dummy + and_dummy + space_dummy + coord_dummy
-                            elif specificity_level == "summary":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + pass_between_dummy + space_dummy + coord_dummy_2 + space_dummy + and_dummy + space_dummy + coord_dummy_2
-                            elif specificity_level == "general picture":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + pass_between_dummy
 
-                        elif abstraction_level == "angles/distances":
-                            if specificity_level == "detailed narrative":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + pass_between_dummy + space_dummy + distance_dummy + space_dummy + and_dummy + space_dummy + distance_dummy
-                            elif specificity_level == "summary":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + pass_between_dummy + space_dummy + distance_dummy_2 + space_dummy + and_dummy + space_dummy + distance_dummy_2
-                            elif specificity_level == "general picture":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + pass_between_dummy
+def _join(items):
+    """Join words as "a", "a and b" or "a, b and c"."""
+    if len(items) <= 2:
+        return ' and '.join(items)
+    return ', '.join(items[:-1]) + ' and ' + items[-1]
 
-                        elif abstraction_level == "right/left":
-                            if specificity_level == "detailed narrative":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + pass_between_dummy + space_dummy + direction_dummy + space_dummy + and_dummy + space_dummy + direction_dummy
-                            elif specificity_level == "summary":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + pass_between_dummy+ space_dummy + direction_dummy_2 + space_dummy + and_dummy + space_dummy + direction_dummy_2
-                            elif specificity_level == "general picture":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + pass_between_dummy
-                    
-                        elif abstraction_level == "semantic annotations":
-                            if specificity_level == "detailed narrative":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + pass_between_dummy + space_dummy + wp1 + space_dummy + and_dummy + space_dummy + wp2
-                            elif specificity_level == "summary":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + pass_between_dummy + space_dummy + wp1 + space_dummy + and_dummy + space_dummy + wp2
-                            elif specificity_level == "general picture":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + pass_between_dummy
 
-                    elif action == "open":
-                        object = action_string[2]
+def _located(nouns, directions):
+    """
+    Attach the spatial relations to a list of noun phrases.
 
-                        if abstraction_level == "coordinates":
-                            if specificity_level == "detailed narrative":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + open_dummy + space_dummy + coord_dummy + space_dummy
-                            elif specificity_level == "summary":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + open_dummy + space_dummy + coord_dummy_2 + space_dummy
-                            elif specificity_level == "general picture":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + open_dummy
+    Objects in the same direction share one relation: "the chair and the
+    closed cabinet, both in front of me,".  Otherwise each object gets its
+    own: "the chair in front of me and the human left of me".
+    """
+    known = [d for d in directions if d is not None]
+    if len(nouns) >= 2 and len(known) == len(nouns) and len(set(known)) == 1:
+        quantifier = 'both' if len(nouns) == 2 else 'all'
+        return f"{_join(nouns)}, {quantifier} {DIRECTION_PHRASES[known[0]]},"
+    return _join([
+        f"{noun} {DIRECTION_PHRASES[direction]}" if direction else noun
+        for noun, direction in zip(nouns, directions)
+    ])
 
-                        elif abstraction_level == "angles/distances":
-                            if specificity_level == "detailed narrative":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + open_dummy + space_dummy + distance_dummy + space_dummy
-                            elif specificity_level == "summary":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + open_dummy + space_dummy + distance_dummy_2 + space_dummy
-                            elif specificity_level == "general picture":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + open_dummy
 
-                        elif abstraction_level == "right/left":
-                            if specificity_level == "detailed narrative":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + open_dummy + space_dummy + direction_dummy + space_dummy
-                            elif specificity_level == "summary":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + open_dummy + space_dummy + direction_dummy_2 + space_dummy
-                            elif specificity_level == "general picture":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + open_dummy
-                    
-                        elif abstraction_level == "semantic annotations":
-                            if specificity_level == "detailed narrative":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + open_dummy + space_dummy + object + space_dummy
-                            elif specificity_level == "summary":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + open_dummy + space_dummy + object + space_dummy
-                            elif specificity_level == "general picture":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + open_dummy        
+def _descriptive(state, causes, task):
+    nouns = [
+        f"the closed {name}" if affordance == 'openability' else f"the {name}"
+        for name, affordance, _ in causes
+    ]
+    subject = _located(nouns, [direction for _, _, direction in causes])
+    if state == 'failure':
+        return f"I failed to {task} because {subject} blocked my path."
+    return f"I deviated from my initial path because {subject} blocked it."
 
-                    elif action == "fetch":
-                        object = action_string[2]
-                        place = action_string[3]
 
-                        if abstraction_level == "coordinates":
-                            if specificity_level == "detailed narrative":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + fetch_dummy + space_dummy + coord_dummy + space_dummy + from_dummy + space_dummy + coord_dummy
-                            elif specificity_level == "summary":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + fetch_dummy + space_dummy + coord_dummy_2 + space_dummy + from_dummy + space_dummy + coord_dummy_2
-                            elif specificity_level == "general picture":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + fetch_dummy
+def _suggestive(state, causes, task):
+    # A person is addressed directly and gets no spatial relation.
+    to_person = ['move yourself' for name, _, _ in causes if name == HUMAN]
+    objects = [cause for cause in causes if cause[0] != HUMAN]
+    actions = [
+        f"open the {name}" if affordance == 'openability' else f"move the {name}"
+        for name, affordance, _ in objects
+    ]
+    directions = [direction for _, _, direction in objects]
+    known = [d for d in directions if d is not None]
+    if len(actions) >= 2 and len(known) == len(actions) and len(set(known)) == 1:
+        quantifier = 'both' if len(actions) == 2 else 'all'
+        request = (f"{_join(to_person + actions)}, "
+                   f"{quantifier} {DIRECTION_PHRASES[known[0]]},")
+    else:
+        request = _join(to_person + [
+            f"{action} {DIRECTION_PHRASES[direction]}" if direction else action
+            for action, direction in zip(actions, directions)
+        ])
+    if state == 'failure':
+        return f"Dear human, please {request} so I can {task}."
+    return (f"Dear human, please {request} so I can decrease my deviation "
+            f"and proceed to navigate more smoothly.")
 
-                        elif abstraction_level == "angles/distances":
-                            if specificity_level == "detailed narrative":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + fetch_dummy + space_dummy + distance_dummy + space_dummy + from_dummy + space_dummy + distance_dummy
-                            elif specificity_level == "summary":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + fetch_dummy + space_dummy + distance_dummy_2 + space_dummy + from_dummy + space_dummy + distance_dummy_2
-                            elif specificity_level == "general picture":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + fetch_dummy
 
-                        elif abstraction_level == "right/left":
-                            if specificity_level == "detailed narrative":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + fetch_dummy + space_dummy + direction_dummy + space_dummy + from_dummy + space_dummy + direction_dummy
-                            elif specificity_level == "summary":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + fetch_dummy + space_dummy + direction_dummy_2 + space_dummy + from_dummy + space_dummy + direction_dummy_2
-                            elif specificity_level == "general picture":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + fetch_dummy
-                    
-                        elif abstraction_level == "semantic annotations":
-                            if specificity_level == "detailed narrative":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + fetch_dummy + space_dummy + object + space_dummy + from_dummy + space_dummy + place
-                            elif specificity_level == "summary":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + fetch_dummy + space_dummy + object + space_dummy + from_dummy + space_dummy + place
-                            elif specificity_level == "general picture":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + fetch_dummy
+def _counterfactual(state, causes, task):
+    clauses = []
+    for affordance, singular, plural in (
+            ('movability', 'was not there', 'were not there'),
+            ('openability', 'was open', 'were open')):
+        group = [cause for cause in causes if cause[1] == affordance]
+        if not group:
+            continue
+        nouns = [f"the {name}" for name, _, _ in group]
+        directions = [direction for _, _, direction in group]
+        known = [d for d in directions if d is not None]
+        if len(group) == 1:
+            clauses.append(f"{_located(nouns, directions)} {singular}")
+        elif len(known) == len(group) and len(set(known)) == 1:
+            clauses.append(f"{_join(nouns)}, {DIRECTION_PHRASES[known[0]]}, "
+                           f"{plural}")
+        else:
+            clauses.append(f"{_located(nouns, directions)} {plural}")
+    condition = ' and '.join(clauses)
+    if state == 'failure':
+        return f"If {condition}, I would not fail to {task}."
+    return f"If {condition}, I would not deviate from my path."
 
-                    elif action == "ask_for_help":
-                        object = action_string[2]
 
-                        if abstraction_level == "coordinates":
-                            if specificity_level == "detailed narrative":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + ask_for_help_dummy + space_dummy + coord_dummy
-                            elif specificity_level == "summary":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + ask_for_help_dummy + space_dummy + coord_dummy_2
-                            elif specificity_level == "general picture":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + ask_for_help_dummy
+def explanation_sentence(state, causes, explanation, task=None):
+    """
+    Return a textual affordance-based explanation.
 
-                        elif abstraction_level == "angles/distances":
-                            if specificity_level == "detailed narrative":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + ask_for_help_dummy + space_dummy + distance_dummy
-                            elif specificity_level == "summary":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + ask_for_help_dummy + space_dummy + distance_dummy_2
-                            elif specificity_level == "general picture":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + ask_for_help_dummy
+    Parameters
+    ----------
+    state : str
+        ``'failure'`` or ``'deviation'``.
+    causes : list of (name, affordance, direction)
+        The causes of the core explanation: the name of the object ("chair"),
+        its affordance (``'movability'`` or ``'openability'``) and its spatial
+        relation to the robot (``'front'``, ``'back'``, ``'left'``,
+        ``'right'`` or None).
+    explanation : str
+        ``'descriptive'``, ``'suggestive'`` or ``'counterfactual'``.
+    task : str or None
+        What the robot failed to do, for example ``'fetch a book'``.
 
-                        elif abstraction_level == "right/left":
-                            if specificity_level == "detailed narrative":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + ask_for_help_dummy + space_dummy + direction_dummy
-                            elif specificity_level == "summary":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + ask_for_help_dummy + space_dummy + direction_dummy_2
-                            elif specificity_level == "general picture":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + ask_for_help_dummy
-                    
-                        elif abstraction_level == "semantic annotations":
-                            if specificity_level == "detailed narrative":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + ask_for_help_dummy + space_dummy + object
-                            elif specificity_level == "summary":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + ask_for_help_dummy + space_dummy + object
-                            elif specificity_level == "general picture":
-                                action_string_verb = robot + space_dummy + is_dummy + space_dummy + ask_for_help_dummy
+    Returns
+    -------
+    str
+        The sentence, or ``''`` if there is no cause to explain.
+    """
+    if not causes:
+        return ''
+    task = task or 'reach my goal'
+    generators = {'descriptive': _descriptive, 'suggestive': _suggestive,
+                  'counterfactual': _counterfactual}
+    return generators[explanation](state, causes, task)
 
-                    elif action == "failure":
-                        reason_action = action_string[2]
-                        object_1 = action_string[3]
-                        object_2 = action_string[4]
-                        reason = action_string[5]
 
-                        if abstraction_level == "coordinates":
-                            if specificity_level == "detailed narrative":
-                                description = robot + space_dummy + "has experienced a failure" + space_dummy + "while" + space_dummy + reason_action + space_dummy + "object" + space_dummy + coord_dummy + space_dummy + "which is" + space_dummy + coord_dummy + space_dummy + reason
-                                suggestion = "dear human, please help me" + space_dummy + reason_action + space_dummy + "object" + space_dummy + coord_dummy
-                                counterfactual = "if" + space_dummy + "object" + space_dummy + coord_dummy + space_dummy + "was not" + space_dummy + reason + ',' + space_dummy + "I would be able to" + space_dummy + reason_action + space_dummy + "object" + space_dummy + coord_dummy
-                                if explanation_level == "no verb":
-                                    action_string_verb = robot + space_dummy + "has experienced a failure" + space_dummy + "while" + space_dummy + reason_action + space_dummy + "object" + space_dummy + coord_dummy
-                                elif explanation_level == "descriptive":
-                                    action_string_verb = description
-                                elif explanation_level == "suggestive":
-                                    action_string_verb = suggestion
-                                elif explanation_level == "counterfactual":
-                                    action_string_verb = counterfactual
-                                elif explanation_level == "descriptive/suggestive":
-                                    action_string_verb = description + '. ' + suggestion
-                                elif explanation_level == "suggestive/counterfactual":
-                                    action_string_verb = suggestion + '. ' + counterfactual
-                                elif explanation_level == "counterfactual/descriptive":
-                                    action_string_verb = counterfactual + '. ' + description
-                                elif explanation_level == "descriptive/suggestive/counterfactual":
-                                    action_string_verb = description + '. ' + suggestion + '. ' + counterfactual 
-                            elif specificity_level == "summary":
-                                description = robot + space_dummy + "has experienced a failure" + space_dummy + "while" + space_dummy + reason_action + space_dummy + coord_dummy_2 + space_dummy + "which is" + space_dummy + reason
-                                suggestion = "dear human, please help me" + space_dummy + reason_action + space_dummy + coord_dummy_2
-                                counterfactual = "if" + space_dummy + "object" + space_dummy + coord_dummy_2 + space_dummy + "was not" + space_dummy + reason + ',' + space_dummy + "I would be able to" + space_dummy + reason_action + space_dummy + coord_dummy_2
-                                if explanation_level == "no verb":
-                                    action_string_verb = robot + space_dummy + "has experienced a failure" + space_dummy + "while" + space_dummy + reason_action + space_dummy + coord_dummy_2
-                                elif explanation_level == "descriptive":
-                                    action_string_verb = description
-                                elif explanation_level == "suggestive":
-                                    action_string_verb = suggestion
-                                elif explanation_level == "counterfactual":
-                                    action_string_verb = counterfactual
-                                elif explanation_level == "descriptive/suggestive":
-                                    action_string_verb = description + '. ' + suggestion
-                                elif explanation_level == "suggestive/counterfactual":
-                                    action_string_verb = suggestion + '. ' + counterfactual
-                                elif explanation_level == "counterfactual/descriptive":
-                                    action_string_verb = counterfactual + '. ' + description
-                                elif explanation_level == "descriptive/suggestive/counterfactual":
-                                    action_string_verb = description + '. ' + suggestion + '. ' + counterfactual 
-                            elif specificity_level == "general picture":
-                                description = robot + space_dummy + "has experienced a failure" + space_dummy + "while" + space_dummy + reason_action + space_dummy + "which is" + space_dummy + reason
-                                suggestion = "dear human, please help me" + space_dummy + reason_action
-                                counterfactual = "if" + space_dummy + "object" + space_dummy + "was not" + space_dummy + reason + ',' + space_dummy + "I would be able to" + space_dummy + reason_action
-                                if explanation_level == "no verb":
-                                    action_string_verb = robot + space_dummy + "has experienced a failure" + space_dummy + "while" + space_dummy + reason_action
-                                elif explanation_level == "descriptive":
-                                    action_string_verb = description
-                                elif explanation_level == "suggestive":
-                                    action_string_verb = suggestion
-                                elif explanation_level == "counterfactual":
-                                    action_string_verb = counterfactual
-                                elif explanation_level == "descriptive/suggestive":
-                                    action_string_verb = description + '. ' + suggestion
-                                elif explanation_level == "suggestive/counterfactual":
-                                    action_string_verb = suggestion + '. ' + counterfactual
-                                elif explanation_level == "counterfactual/descriptive":
-                                    action_string_verb = counterfactual + '. ' + description
-                                elif explanation_level == "descriptive/suggestive/counterfactual":
-                                    action_string_verb = description + '. ' + suggestion + '. ' + counterfactual 
+def spatial_relations(core_explanation, ontology, qsr):
+    """
+    Return the causes of a core explanation as (name, affordance, direction).
 
-                        elif abstraction_level == "angles/distances":
-                            if specificity_level == "detailed narrative":
-                                description = robot + space_dummy + "has experienced a failure" + space_dummy + "while" + space_dummy + reason_action + space_dummy + "object" + space_dummy + distance_dummy + space_dummy + "which is" + space_dummy + reason
-                                suggestion = "dear human, please help me" + space_dummy + reason_action + space_dummy + "object" + space_dummy + distance_dummy
-                                counterfactual = "if" + space_dummy + "object" + space_dummy + distance_dummy + space_dummy + "was not" + space_dummy + reason + ',' + space_dummy + "I would be able to" + space_dummy + reason_action + space_dummy + "object" + space_dummy + distance_dummy
-                                if explanation_level == "no verb":
-                                    action_string_verb = robot + space_dummy + "has experienced a failure" + space_dummy + "while" + space_dummy + reason_action + space_dummy + "object" + space_dummy + distance_dummy
-                                elif explanation_level == "descriptive":
-                                    action_string_verb = description
-                                elif explanation_level == "suggestive":
-                                    action_string_verb = suggestion
-                                elif explanation_level == "counterfactual":
-                                    action_string_verb = counterfactual
-                                elif explanation_level == "descriptive/suggestive":
-                                    action_string_verb = description + '. ' + suggestion
-                                elif explanation_level == "suggestive/counterfactual":
-                                    action_string_verb = suggestion + '. ' + counterfactual
-                                elif explanation_level == "counterfactual/descriptive":
-                                    action_string_verb = counterfactual + '. ' + description
-                                elif explanation_level == "descriptive/suggestive/counterfactual":
-                                    action_string_verb = description + '. ' + suggestion + '. ' + counterfactual  
-                            elif specificity_level == "summary":
-                                description = robot + space_dummy + "has experienced a failure" + space_dummy + "while" + space_dummy + reason_action + space_dummy + distance_dummy_2 + space_dummy + "which is" + space_dummy + reason
-                                suggestion = "dear human, please help me" + space_dummy + reason_action + space_dummy + distance_dummy_2
-                                counterfactual = "if" + space_dummy + "object" + space_dummy + distance_dummy_2 + space_dummy + "was not" + space_dummy + reason + ',' + space_dummy + "I would be able to" + space_dummy + reason_action + space_dummy + distance_dummy_2
-                                if explanation_level == "no verb":
-                                    action_string_verb = robot + space_dummy + "has experienced a failure" + space_dummy + "while" + space_dummy + reason_action + space_dummy + distance_dummy_2
-                                elif explanation_level == "descriptive":
-                                    action_string_verb = description
-                                elif explanation_level == "suggestive":
-                                    action_string_verb = suggestion
-                                elif explanation_level == "counterfactual":
-                                    action_string_verb = counterfactual
-                                elif explanation_level == "descriptive/suggestive":
-                                    action_string_verb = description + '. ' + suggestion
-                                elif explanation_level == "suggestive/counterfactual":
-                                    action_string_verb = suggestion + '. ' + counterfactual
-                                elif explanation_level == "counterfactual/descriptive":
-                                    action_string_verb = counterfactual + '. ' + description
-                                elif explanation_level == "descriptive/suggestive/counterfactual":
-                                    action_string_verb = description + '. ' + suggestion + '. ' + counterfactual 
-                            elif specificity_level == "general picture":
-                                description = robot + space_dummy + "has experienced a failure" + space_dummy + "while" + space_dummy + reason_action + space_dummy + "which is" + space_dummy + reason
-                                suggestion = "dear human, please help me" + space_dummy + reason_action
-                                counterfactual = "if" + space_dummy + "object" + space_dummy + "was not" + space_dummy + reason + ',' + space_dummy + "I would be able to" + space_dummy + reason_action
-                                if explanation_level == "no verb":
-                                    action_string_verb = robot + space_dummy + "has experienced a failure" + space_dummy + "while" + space_dummy + reason_action
-                                elif explanation_level == "descriptive":
-                                    action_string_verb = description
-                                elif explanation_level == "suggestive":
-                                    action_string_verb = suggestion
-                                elif explanation_level == "counterfactual":
-                                    action_string_verb = counterfactual
-                                elif explanation_level == "descriptive/suggestive":
-                                    action_string_verb = description + '. ' + suggestion
-                                elif explanation_level == "suggestive/counterfactual":
-                                    action_string_verb = suggestion + '. ' + counterfactual
-                                elif explanation_level == "counterfactual/descriptive":
-                                    action_string_verb = counterfactual + '. ' + description
-                                elif explanation_level == "descriptive/suggestive/counterfactual":
-                                    action_string_verb = description + '. ' + suggestion + '. ' + counterfactual 
+    The direction is the qualitative spatial relation of the object to the
+    robot, computed by the QSR calculus from the robot pose.
+    """
+    from qsr import relatum_angle
 
-                        elif abstraction_level == "right/left":
-                            if specificity_level == "detailed narrative":
-                                description = robot + space_dummy + "has experienced a failure" + space_dummy + "while" + space_dummy + reason_action + space_dummy + "object" + space_dummy + direction_dummy + space_dummy + "which is" + space_dummy + reason
-                                suggestion = "dear human, please help me" + space_dummy + reason_action + space_dummy + "object" + space_dummy + direction_dummy
-                                counterfactual = "if" + space_dummy + "object" + space_dummy + direction_dummy + space_dummy + "was not" + space_dummy + reason + ',' + space_dummy + "I would be able to" + space_dummy + reason_action + space_dummy + "object" + space_dummy + direction_dummy
-                                if explanation_level == "no verb":
-                                    action_string_verb = robot + space_dummy + "has experienced a failure" + space_dummy + "while" + space_dummy + reason_action + space_dummy + "object" + space_dummy + direction_dummy
-                                elif explanation_level == "descriptive":
-                                    action_string_verb = description
-                                elif explanation_level == "suggestive":
-                                    action_string_verb = suggestion
-                                elif explanation_level == "counterfactual":
-                                    action_string_verb = counterfactual
-                                elif explanation_level == "descriptive/suggestive":
-                                    action_string_verb = description + '. ' + suggestion
-                                elif explanation_level == "suggestive/counterfactual":
-                                    action_string_verb = suggestion + '. ' + counterfactual
-                                elif explanation_level == "counterfactual/descriptive":
-                                    action_string_verb = counterfactual + '. ' + description
-                                elif explanation_level == "descriptive/suggestive/counterfactual":
-                                    action_string_verb = description + '. ' + suggestion + '. ' + counterfactual                    
-                            elif specificity_level == "summary":
-                                description = robot + space_dummy + "has experienced a failure" + space_dummy + "while" + space_dummy + reason_action + space_dummy + direction_dummy_2 + space_dummy + "which is" + space_dummy + reason
-                                suggestion = "dear human, please help me" + space_dummy + reason_action + space_dummy + direction_dummy_2
-                                counterfactual = "if" + space_dummy + "object" + space_dummy + direction_dummy_2 + space_dummy + "was not" + space_dummy + reason + ',' + space_dummy + "I would be able to" + space_dummy + reason_action + space_dummy + direction_dummy_2
-                                if explanation_level == "no verb":
-                                    action_string_verb = robot + space_dummy + "has experienced a failure" + space_dummy + "while" + space_dummy + reason_action + space_dummy + direction_dummy_2
-                                elif explanation_level == "descriptive":
-                                    action_string_verb = description
-                                elif explanation_level == "suggestive":
-                                    action_string_verb = suggestion
-                                elif explanation_level == "counterfactual":
-                                    action_string_verb = counterfactual
-                                elif explanation_level == "descriptive/suggestive":
-                                    action_string_verb = description + '. ' + suggestion
-                                elif explanation_level == "suggestive/counterfactual":
-                                    action_string_verb = suggestion + '. ' + counterfactual
-                                elif explanation_level == "counterfactual/descriptive":
-                                    action_string_verb = counterfactual + '. ' + description
-                                elif explanation_level == "descriptive/suggestive/counterfactual":
-                                    action_string_verb = description + '. ' + suggestion + '. ' + counterfactual 
-                            elif specificity_level == "general picture":
-                                description = robot + space_dummy + "has experienced a failure" + space_dummy + "while" + space_dummy + reason_action + space_dummy + "which is" + space_dummy + reason
-                                suggestion = "dear human, please help me" + space_dummy + reason_action
-                                counterfactual = "if" + space_dummy + "object" + space_dummy + "was not" + space_dummy + reason + ',' + space_dummy + "I would be able to" + space_dummy + reason_action
-                                if explanation_level == "no verb":
-                                    action_string_verb = robot + space_dummy + "has experienced a failure" + space_dummy + "while" + space_dummy + reason_action
-                                elif explanation_level == "descriptive":
-                                    action_string_verb = description
-                                elif explanation_level == "suggestive":
-                                    action_string_verb = suggestion
-                                elif explanation_level == "counterfactual":
-                                    action_string_verb = counterfactual
-                                elif explanation_level == "descriptive/suggestive":
-                                    action_string_verb = description + '. ' + suggestion
-                                elif explanation_level == "suggestive/counterfactual":
-                                    action_string_verb = suggestion + '. ' + counterfactual
-                                elif explanation_level == "counterfactual/descriptive":
-                                    action_string_verb = counterfactual + '. ' + description
-                                elif explanation_level == "descriptive/suggestive/counterfactual":
-                                    action_string_verb = description + '. ' + suggestion + '. ' + counterfactual 
-                    
-                        elif abstraction_level == "semantic annotations":
-                            if specificity_level == "detailed narrative":
-                                description = robot + space_dummy + "has experienced a failure" + space_dummy + "while" + space_dummy + reason_action + space_dummy + object_1 + space_dummy + "at" + space_dummy + object_2 + space_dummy + "which is" + space_dummy + reason
-                                suggestion = "dear human, please help me" + space_dummy + reason_action + space_dummy + object_1 + space_dummy + "at" + space_dummy + object_2
-                                counterfactual = "if" + space_dummy + object_1 + space_dummy + "at" + space_dummy + object_2 + space_dummy + "was not" + space_dummy + reason + ',' + space_dummy + "I would be able to" + space_dummy + reason_action + space_dummy + object_1 + space_dummy + from_dummy + space_dummy + object_2
-                                if explanation_level == "no verb":
-                                    action_string_verb = robot + space_dummy + "has experienced a failure" + space_dummy + "while" + space_dummy + reason_action + space_dummy + object_1 + space_dummy + "at" + space_dummy + object_2
-                                elif explanation_level == "descriptive":
-                                    action_string_verb = description
-                                elif explanation_level == "suggestive":
-                                    action_string_verb = suggestion
-                                elif explanation_level == "counterfactual":
-                                    action_string_verb = counterfactual
-                                elif explanation_level == "descriptive/suggestive":
-                                    action_string_verb = description + '. ' + suggestion
-                                elif explanation_level == "suggestive/counterfactual":
-                                    action_string_verb = suggestion + '. ' + counterfactual
-                                elif explanation_level == "counterfactual/descriptive":
-                                    action_string_verb = counterfactual + '. ' + description
-                                elif explanation_level == "descriptive/suggestive/counterfactual":
-                                    action_string_verb = description + '. ' + suggestion + '. ' + counterfactual
-                            
-                            elif specificity_level == "summary":
-                                description = robot + space_dummy + "has experienced a failure" + space_dummy + "while" + space_dummy + reason_action + space_dummy + object_1 + space_dummy + "which is" + space_dummy + reason
-                                suggestion = "dear human, please help me" + space_dummy + reason_action + space_dummy + object_1 + space_dummy + "which is" + space_dummy + reason
-                                counterfactual = "if" + space_dummy + object_1 + space_dummy + "was not" + space_dummy + reason + ',' + space_dummy + "I would be able to" + space_dummy + reason_action + space_dummy + object_1
-                                if explanation_level == "no verb":
-                                    action_string_verb = robot + space_dummy + "has experienced a failure" + space_dummy + "while" + space_dummy + reason_action + space_dummy + object_1
-                                elif explanation_level == "descriptive":
-                                    action_string_verb = description
-                                elif explanation_level == "suggestive":
-                                    action_string_verb = suggestion
-                                elif explanation_level == "counterfactual":
-                                    action_string_verb = counterfactual
-                                elif explanation_level == "descriptive/suggestive":
-                                    action_string_verb = description + '. ' + suggestion
-                                elif explanation_level == "suggestive/counterfactual":
-                                    action_string_verb = suggestion + '. ' + counterfactual
-                                elif explanation_level == "counterfactual/descriptive":
-                                    action_string_verb = counterfactual + '. ' + description
-                                elif explanation_level == "descriptive/suggestive/counterfactual":
-                                    action_string_verb = description + '. ' + suggestion + '. ' + counterfactual
-                            
-                            elif specificity_level == "general picture":
-                                description = robot + space_dummy + "has experienced a failure" + space_dummy + "while" + space_dummy + reason_action + space_dummy + object_1 + space_dummy + "which is" + space_dummy + reason
-                                suggestion = "dear human, please help me" + space_dummy + reason_action + space_dummy + object_1 + space_dummy + "which is" + space_dummy + reason
-                                counterfactual = "if" + space_dummy + object_1 + space_dummy + "was not" + space_dummy + reason + ',' + space_dummy + "I would be able to" + space_dummy + reason_action + space_dummy + object_1
-                                if explanation_level == "no verb":
-                                    action_string_verb = robot + space_dummy + "has experienced a failure" + space_dummy + "while" + space_dummy + reason_action
-                                elif explanation_level == "descriptive":
-                                    action_string_verb = description
-                                elif explanation_level == "suggestive":
-                                    action_string_verb = suggestion
-                                elif explanation_level == "counterfactual":
-                                    action_string_verb = counterfactual
-                                elif explanation_level == "descriptive/suggestive":
-                                    action_string_verb = description + '. ' + suggestion
-                                elif explanation_level == "suggestive/counterfactual":
-                                    action_string_verb = suggestion + '. ' + counterfactual
-                                elif explanation_level == "counterfactual/descriptive":
-                                    action_string_verb = counterfactual + '. ' + description
-                                elif explanation_level == "descriptive/suggestive/counterfactual":
-                                    action_string_verb = description + '. ' + suggestion + '. ' + counterfactual
+    robot_x, robot_y, robot_yaw = core_explanation.robot_pose
+    causes = []
+    for pair in core_explanation.causes:
+        obj = ontology.objects[pair.obj_label]
+        angle = relatum_angle(robot_x, robot_y, robot_yaw, obj['x'], obj['y'])
+        direction = qsr.getBinaryQsrValue(angle) or None
+        causes.append((obj['name'], pair.affordance, direction))
+    return causes
 
-                    elif action == "deviation":
-                        object = action_string[2]
 
-                        if abstraction_level == "coordinates":
-                            if specificity_level == "detailed narrative":
-                                description = "tiago has experienced a deviation while navigating because of movable " + coord_dummy + " which is in front of it"
-                                suggestion = "dear movable "  + coord_dummy + " in front of me, can you please move, so I can continue navigating more smoothly"
-                                counterfactual = "if movable " + coord_dummy + " was not in front of me, I would be able to continue navigating more smoothly"
-                                if explanation_level == "no verb":
-                                    action_string_verb = "tiago has experienced a deviation while navigating because of " + coord_dummy
-                                elif explanation_level == "descriptive":
-                                    action_string_verb = description
-                                elif explanation_level == "suggestive":
-                                    action_string_verb = suggestion
-                                elif explanation_level == "counterfactual":
-                                    action_string_verb = counterfactual
-                                elif explanation_level == "descriptive/suggestive":
-                                    action_string_verb = description + '. ' + suggestion
-                                elif explanation_level == "suggestive/counterfactual":
-                                    action_string_verb = suggestion + '. ' + counterfactual
-                                elif explanation_level == "counterfactual/descriptive":
-                                    action_string_verb = counterfactual + '. ' + description
-                                elif explanation_level == "descriptive/suggestive/counterfactual":
-                                    action_string_verb = description + '. ' + suggestion + '. ' + counterfactual 
-                            elif specificity_level == "summary":
-                                description = "tiago has experienced a deviation while navigating because of movable " + coord_dummy_2
-                                suggestion = "dear movable "  + coord_dummy_2 + ", can you please move, so I can continue navigating more smoothly"
-                                counterfactual = "if movable " + coord_dummy_2 + " was not there, I would be able to continue navigating more smoothly"
-                                if explanation_level == "no verb":
-                                    action_string_verb = "tiago has experienced a deviation while navigating because of " + coord_dummy_2
-                                elif explanation_level == "descriptive":
-                                    action_string_verb = description
-                                elif explanation_level == "suggestive":
-                                    action_string_verb = suggestion
-                                elif explanation_level == "counterfactual":
-                                    action_string_verb = counterfactual
-                                elif explanation_level == "descriptive/suggestive":
-                                    action_string_verb = description + '. ' + suggestion
-                                elif explanation_level == "suggestive/counterfactual":
-                                    action_string_verb = suggestion + '. ' + counterfactual
-                                elif explanation_level == "counterfactual/descriptive":
-                                    action_string_verb = counterfactual + '. ' + description
-                                elif explanation_level == "descriptive/suggestive/counterfactual":
-                                    action_string_verb = description + '. ' + suggestion + '. ' + counterfactual 
-                            elif specificity_level == "general picture":
-                                description = "tiago has experienced a deviation while navigating"
-                                suggestion = "dear object, can you please move, so I can continue navigating more smoothly"
-                                counterfactual = "if object was not there, I would be able to continue navigating more smoothly"
-                                if explanation_level == "no verb":
-                                    action_string_verb = "tiago has experienced a deviation while navigating"
-                                elif explanation_level == "descriptive":
-                                    action_string_verb = description
-                                elif explanation_level == "suggestive":
-                                    action_string_verb = suggestion
-                                elif explanation_level == "counterfactual":
-                                    action_string_verb = counterfactual
-                                elif explanation_level == "descriptive/suggestive":
-                                    action_string_verb = description + '. ' + suggestion
-                                elif explanation_level == "suggestive/counterfactual":
-                                    action_string_verb = suggestion + '. ' + counterfactual
-                                elif explanation_level == "counterfactual/descriptive":
-                                    action_string_verb = counterfactual + '. ' + description
-                                elif explanation_level == "descriptive/suggestive/counterfactual":
-                                    action_string_verb = description + '. ' + suggestion + '. ' + counterfactual 
+def verbalize_explanation(core_explanation, ontology, qsr,
+                          explanation='descriptive', task=None):
+    """
+    ``Verbalize(core_explanation, QSR)`` of Algorithm 1.
 
-                        elif abstraction_level == "angles/distances":
-                            if specificity_level == "detailed narrative":
-                                description = "tiago has experienced a deviation while navigating because of movable " + distance_dummy + " which is in front of it"
-                                suggestion = "dear movable "  + distance_dummy + " in front of me, can you please move, so I can continue navigating more smoothly"
-                                counterfactual = "if movable " + distance_dummy + " was not in front of me, I would be able to continue navigating more smoothly"
-                                if explanation_level == "no verb":
-                                    action_string_verb = "tiago has experienced a deviation while navigating because of " + distance_dummy
-                                elif explanation_level == "descriptive":
-                                    action_string_verb = description
-                                elif explanation_level == "suggestive":
-                                    action_string_verb = suggestion
-                                elif explanation_level == "counterfactual":
-                                    action_string_verb = counterfactual
-                                elif explanation_level == "descriptive/suggestive":
-                                    action_string_verb = description + '. ' + suggestion
-                                elif explanation_level == "suggestive/counterfactual":
-                                    action_string_verb = suggestion + '. ' + counterfactual
-                                elif explanation_level == "counterfactual/descriptive":
-                                    action_string_verb = counterfactual + '. ' + description
-                                elif explanation_level == "descriptive/suggestive/counterfactual":
-                                    action_string_verb = description + '. ' + suggestion + '. ' + counterfactual  
-                            elif specificity_level == "summary":
-                                description = "tiago has experienced a deviation while navigating because of movable " + distance_dummy_2
-                                suggestion = "dear movable "  + distance_dummy_2 + ", can you please move, so I can continue navigating more smoothly"
-                                counterfactual = "if movable " + distance_dummy_2 + " was not there, I would be able to continue navigating more smoothly"
-                                if explanation_level == "no verb":
-                                    action_string_verb = "tiago has experienced a deviation while navigating because of " + distance_dummy_2
-                                elif explanation_level == "descriptive":
-                                    action_string_verb = description
-                                elif explanation_level == "suggestive":
-                                    action_string_verb = suggestion
-                                elif explanation_level == "counterfactual":
-                                    action_string_verb = counterfactual
-                                elif explanation_level == "descriptive/suggestive":
-                                    action_string_verb = description + '. ' + suggestion
-                                elif explanation_level == "suggestive/counterfactual":
-                                    action_string_verb = suggestion + '. ' + counterfactual
-                                elif explanation_level == "counterfactual/descriptive":
-                                    action_string_verb = counterfactual + '. ' + description
-                                elif explanation_level == "descriptive/suggestive/counterfactual":
-                                    action_string_verb = description + '. ' + suggestion + '. ' + counterfactual 
-                            elif specificity_level == "general picture":
-                                description = "tiago has experienced a deviation while navigating"
-                                suggestion = "dear object, can you please move, so I can continue navigating more smoothly"
-                                counterfactual = "if object was not there, I would be able to continue navigating more smoothly"
-                                if explanation_level == "no verb":
-                                    action_string_verb = "tiago has experienced a deviation while navigating"
-                                elif explanation_level == "descriptive":
-                                    action_string_verb = description
-                                elif explanation_level == "suggestive":
-                                    action_string_verb = suggestion
-                                elif explanation_level == "counterfactual":
-                                    action_string_verb = counterfactual
-                                elif explanation_level == "descriptive/suggestive":
-                                    action_string_verb = description + '. ' + suggestion
-                                elif explanation_level == "suggestive/counterfactual":
-                                    action_string_verb = suggestion + '. ' + counterfactual
-                                elif explanation_level == "counterfactual/descriptive":
-                                    action_string_verb = counterfactual + '. ' + description
-                                elif explanation_level == "descriptive/suggestive/counterfactual":
-                                    action_string_verb = description + '. ' + suggestion + '. ' + counterfactual 
+    Returns the textual explanation of the given type, or ``''`` for an empty
+    core explanation.
+    """
+    causes = spatial_relations(core_explanation, ontology, qsr)
+    return explanation_sentence(core_explanation.state.value, causes,
+                                explanation, task)
 
-                        elif abstraction_level == "right/left":
-                            if specificity_level == "detailed narrative":
-                                description = "tiago has experienced a deviation while navigating because of movable " + direction_dummy + " which is in front of it"
-                                suggestion = "dear movable "  + direction_dummy + " in front of me, can you please move, so I can continue navigating more smoothly"
-                                counterfactual = "if movable " + direction_dummy + " was not in front of me, I would be able to continue navigating more smoothly"
-                                if explanation_level == "no verb":
-                                    action_string_verb = "tiago has experienced a deviation while navigating because of " + direction_dummy                    
-                                elif explanation_level == "descriptive":
-                                    action_string_verb = description
-                                elif explanation_level == "suggestive":
-                                    action_string_verb = suggestion
-                                elif explanation_level == "counterfactual":
-                                    action_string_verb = counterfactual
-                                elif explanation_level == "descriptive/suggestive":
-                                    action_string_verb = description + '. ' + suggestion
-                                elif explanation_level == "suggestive/counterfactual":
-                                    action_string_verb = suggestion + '. ' + counterfactual
-                                elif explanation_level == "counterfactual/descriptive":
-                                    action_string_verb = counterfactual + '. ' + description
-                                elif explanation_level == "descriptive/suggestive/counterfactual":
-                                    action_string_verb = description + '. ' + suggestion + '. ' + counterfactual                    
-                            elif specificity_level == "summary":
-                                description = "tiago has experienced a deviation while navigating because of movable " + direction_dummy_2
-                                suggestion = "dear movable "  + direction_dummy_2 + ", can you please move, so I can continue navigating more smoothly"
-                                counterfactual = "if movable " + direction_dummy_2 + " was not there, I would be able to continue navigating more smoothly"
-                                if explanation_level == "no verb":
-                                    action_string_verb = "tiago has experienced a deviation while navigating because of " + direction_dummy_2
-                                elif explanation_level == "descriptive":
-                                    action_string_verb = description
-                                elif explanation_level == "suggestive":
-                                    action_string_verb = suggestion
-                                elif explanation_level == "counterfactual":
-                                    action_string_verb = counterfactual
-                                elif explanation_level == "descriptive/suggestive":
-                                    action_string_verb = description + '. ' + suggestion
-                                elif explanation_level == "suggestive/counterfactual":
-                                    action_string_verb = suggestion + '. ' + counterfactual
-                                elif explanation_level == "counterfactual/descriptive":
-                                    action_string_verb = counterfactual + '. ' + description
-                                elif explanation_level == "descriptive/suggestive/counterfactual":
-                                    action_string_verb = description + '. ' + suggestion + '. ' + counterfactual 
-                            elif specificity_level == "general picture":
-                                description = "tiago has experienced a deviation while navigating"
-                                suggestion = "dear object, can you please move, so I can continue navigating more smoothly"
-                                counterfactual = "if object was not there, I would be able to continue navigating more smoothly"
-                                if explanation_level == "no verb":
-                                    action_string_verb = "tiago has experienced a deviation while navigating"
-                                elif explanation_level == "descriptive":
-                                    action_string_verb = description
-                                elif explanation_level == "suggestive":
-                                    action_string_verb = suggestion
-                                elif explanation_level == "counterfactual":
-                                    action_string_verb = counterfactual
-                                elif explanation_level == "descriptive/suggestive":
-                                    action_string_verb = description + '. ' + suggestion
-                                elif explanation_level == "suggestive/counterfactual":
-                                    action_string_verb = suggestion + '. ' + counterfactual
-                                elif explanation_level == "counterfactual/descriptive":
-                                    action_string_verb = counterfactual + '. ' + description
-                                elif explanation_level == "descriptive/suggestive/counterfactual":
-                                    action_string_verb = description + '. ' + suggestion + '. ' + counterfactual 
-                    
-                        elif abstraction_level == "semantic annotations":
-                            if specificity_level == "detailed narrative":
-                                description = "tiago has experienced a deviation while navigating because of movable " + object + " which is in front of it"
-                                suggestion = "dear movable "  + object + " in front of me, can you please move, so I can continue navigating more smoothly"
-                                counterfactual = "if movable " + object + " was not in front of me, I would be able to continue navigating more smoothly"
-                                if explanation_level == "no verb":
-                                    action_string_verb = "tiago has experienced a deviation while navigating because of " + object
-                                elif explanation_level == "descriptive":
-                                    action_string_verb = description
-                                elif explanation_level == "suggestive":
-                                    action_string_verb = suggestion
-                                elif explanation_level == "counterfactual":
-                                    action_string_verb = counterfactual
-                                elif explanation_level == "descriptive/suggestive":
-                                    action_string_verb = description + '. ' + suggestion
-                                elif explanation_level == "suggestive/counterfactual":
-                                    action_string_verb = suggestion + '. ' + counterfactual
-                                elif explanation_level == "counterfactual/descriptive":
-                                    action_string_verb = counterfactual + '. ' + description
-                                elif explanation_level == "descriptive/suggestive/counterfactual":
-                                    action_string_verb = description + '. ' + suggestion + '. ' + counterfactual
-                            
-                            elif specificity_level == "summary":
-                                description = "tiago has experienced a deviation while navigating because of movable " + object
-                                suggestion = "dear movable "  + object + ", can you please move, so I can continue navigating more smoothly"
-                                counterfactual = "if movable " + object + " was not there, I would be able to continue navigating more smoothly"
-                                if explanation_level == "no verb":
-                                    action_string_verb = "tiago has experienced a deviation while navigating because of " + object
-                                elif explanation_level == "descriptive":
-                                    action_string_verb = description
-                                elif explanation_level == "suggestive":
-                                    action_string_verb = suggestion
-                                elif explanation_level == "counterfactual":
-                                    action_string_verb = counterfactual
-                                elif explanation_level == "descriptive/suggestive":
-                                    action_string_verb = description + '. ' + suggestion
-                                elif explanation_level == "suggestive/counterfactual":
-                                    action_string_verb = suggestion + '. ' + counterfactual
-                                elif explanation_level == "counterfactual/descriptive":
-                                    action_string_verb = counterfactual + '. ' + description
-                                elif explanation_level == "descriptive/suggestive/counterfactual":
-                                    action_string_verb = description + '. ' + suggestion + '. ' + counterfactual
-                            
-                            elif specificity_level == "general picture":
-                                description = "tiago has experienced a deviation while navigating"
-                                suggestion = "dear object, can you please move, so I can continue navigating more smoothly"
-                                counterfactual = "if object was not there, I would be able to continue navigating more smoothly"
-                                if explanation_level == "no verb":
-                                    action_string_verb = "tiago has experienced a deviation while navigating"
-                                elif explanation_level == "descriptive":
-                                    action_string_verb = description
-                                elif explanation_level == "suggestive":
-                                    action_string_verb = suggestion
-                                elif explanation_level == "counterfactual":
-                                    action_string_verb = counterfactual
-                                elif explanation_level == "descriptive/suggestive":
-                                    action_string_verb = description + '. ' + suggestion
-                                elif explanation_level == "suggestive/counterfactual":
-                                    action_string_verb = suggestion + '. ' + counterfactual
-                                elif explanation_level == "counterfactual/descriptive":
-                                    action_string_verb = counterfactual + '. ' + description
-                                elif explanation_level == "descriptive/suggestive/counterfactual":
-                                    action_string_verb = description + '. ' + suggestion + '. ' + counterfactual
 
-                    #print(action_string_verb)
-                    
-                    words_plan_sum += len(action_string_verb.split(' '))
-                #words_plan_sum /= len(plan)
-            
-            words_avg = words_plan_sum / 10
+# ---------------------------------------------------------------------------
+# Verbalization space experiment (Section VI-B)
+# ---------------------------------------------------------------------------
 
-            print("(A,S,E,N)=(%s,%s,%s,%f)", (abstraction_level,specificity_level,explanation_level,words_avg))                
+def count_words(sentence):
+    """
+    Count the words of a verbalized action as the experiment did.
+
+    The sentence is split at single spaces.  A space at the end of a sentence
+    therefore adds one to the count.
+    """
+    return len(sentence.split(' '))
+
+
+def compute_word_count_stats(plans=PLANS):
+    """
+    Return the average number of words per plan for the combinations of A, S, E.
+
+    The plans are verbalized as complete plans (locality L1).
+
+    Returns
+    -------
+    dict
+        Maps (abstraction, specificity, explanation) to the number of words
+        of all verbalized plans divided by the number of plans.
+    """
+    stats = {}
+    for abstraction in ABSTRACTION_LEVELS:
+        for specificity in SPECIFICITY_LEVELS:
+            for explanation in EXPLANATION_LEVELS:
+                words = sum(
+                    count_words(sentence)
+                    for plan in plans
+                    for sentence in verbalize_plan(
+                        plan, abstraction, 'complete plan', specificity,
+                        explanation)
+                )
+                stats[(abstraction, specificity, explanation)] = words / len(plans)
+    return stats
+
+
+def figure_tables(stats):
+    """
+    Reduce the statistics to the three tables of Fig. 8.
+
+    Each table is the average over the levels of the third parameter.  Only
+    the explanation levels E1 to E4 of Table I enter.
+
+    Returns
+    -------
+    dict
+        ``'abstraction/specificity'``, ``'abstraction/explanation'`` and
+        ``'explanation/specificity'``, each a dict that maps a pair of levels
+        to the average number of words.
+    """
+    def mean(values):
+        values = list(values)
+        return sum(values) / len(values)
+
+    levels_e = TABLE_EXPLANATION_LEVELS
+    return {
+        'abstraction/specificity': {
+            (a, s): mean(stats[(a, s, e)] for e in levels_e)
+            for a in ABSTRACTION_LEVELS for s in SPECIFICITY_LEVELS
+        },
+        'abstraction/explanation': {
+            (a, e): mean(stats[(a, s, e)] for s in SPECIFICITY_LEVELS)
+            for a in ABSTRACTION_LEVELS for e in levels_e
+        },
+        'explanation/specificity': {
+            (e, s): mean(stats[(a, s, e)] for a in ABSTRACTION_LEVELS)
+            for e in levels_e for s in SPECIFICITY_LEVELS
+        },
+    }
+
+
+def main():
+    stats = compute_word_count_stats()
+
+    print("Average number of words per plan")
+    print(f"{'abstraction':<22}{'specificity':<20}{'explanation':<40}{'words':>7}")
+    for (a, s, e), words in stats.items():
+        print(f"{a:<22}{s:<20}{e:<40}{words:>7.1f}")
+
+    for name, table in figure_tables(stats).items():
+        print(f"\nFig. 8, {name} (average number of words)")
+        for (first, second), words in table.items():
+            print(f"  {first:<22}{second:<20}{words:>7.1f}")
+
+
+if __name__ == '__main__':
+    main()
