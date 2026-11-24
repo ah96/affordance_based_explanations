@@ -33,6 +33,11 @@ COLOR_NEUTRAL = (0.85, 0.85, 0.85)   # light gray: the object has no influence
 COLOR_ROBOT = (1.0, 1.0, 1.0)
 COLOR_BACKGROUND = (0.4, 0.4, 0.4)
 
+#: Size of the object names in points.
+LABEL_FONT_SIZE = 8
+#: Distance in metres between an object and a name placed next to it.
+LABEL_GAP = 0.06
+
 
 class VisualExplanationGenerator:
     """
@@ -100,14 +105,22 @@ class VisualExplanationGenerator:
         ax.set_xlim(robot_x - self.view_radius, robot_x + self.view_radius)
         ax.set_ylim(robot_y - self.view_radius, robot_y + self.view_radius)
 
+        view = (robot_x - self.view_radius, robot_y - self.view_radius,
+                robot_x + self.view_radius, robot_y + self.view_radius)
+        boxes = {}
         for label, color in self.colors(core_explanation).items():
             obj = self.ontology.objects[label]
             ax.add_patch(mpatches.Rectangle(
                 (obj['x'] - obj['w'] / 2.0, obj['y'] - obj['h'] / 2.0),
                 obj['w'], obj['h'],
                 facecolor=color, edgecolor='black', linewidth=0.8, zorder=2))
-            ax.text(obj['x'], obj['y'], label, fontsize=7, fontweight='bold',
-                    ha='center', va='center', clip_on=True, zorder=3)
+            # The part of the object that lies inside the view.
+            box = (max(obj['x'] - obj['w'] / 2.0, view[0]),
+                   max(obj['y'] - obj['h'] / 2.0, view[1]),
+                   min(obj['x'] + obj['w'] / 2.0, view[2]),
+                   min(obj['y'] + obj['h'] / 2.0, view[3]))
+            if box[0] < box[2] and box[1] < box[3]:
+                boxes[label] = box
 
         if show_paths:
             for path, style in ((core_explanation.original_path, '--'),
@@ -127,6 +140,10 @@ class VisualExplanationGenerator:
                     robot_y + self.robot_radius * math.sin(robot_yaw)),
             arrowprops=dict(arrowstyle='->', color='white', lw=2))
 
+        robot_box = (robot_x - self.robot_radius, robot_y - self.robot_radius,
+                     robot_x + self.robot_radius, robot_y + self.robot_radius)
+        self._place_names(fig, ax, boxes, robot_box, view)
+
         ax.set_xlabel('x (m)')
         ax.set_ylabel('y (m)')
         ax.legend(
@@ -145,6 +162,82 @@ class VisualExplanationGenerator:
         if output_path:
             fig.savefig(output_path, dpi=self.dpi)
         return fig
+
+
+    @staticmethod
+    def _place_names(fig, ax, boxes, robot_box, view):
+        """
+        Write the identifier of every object where it can be read.
+
+        A name that fits inside its object is written there, turned by 90
+        degrees for an object that is taller than wide.  Any other name is
+        written next to its object on a white box, on the side where it
+        covers the least of the other objects, the robot and the names
+        already placed.
+        """
+        def overlap(a, b):
+            width = min(a[2], b[2]) - max(a[0], b[0])
+            height = min(a[3], b[3]) - max(a[1], b[1])
+            return width * height if width > 0 and height > 0 else 0.0
+
+        def outside(a):
+            width = max(view[0] - a[0], 0.0) + max(a[2] - view[2], 0.0)
+            height = max(view[1] - a[1], 0.0) + max(a[3] - view[3], 0.0)
+            return width * (a[3] - a[1]) + height * (a[2] - a[0])
+
+        # Size of each name in metres, measured on the drawn figure.
+        fig.canvas.draw()
+        to_data = ax.transData.inverted()
+        sizes = {}
+        for label in boxes:
+            probe = ax.text(0.0, 0.0, label, fontsize=LABEL_FONT_SIZE,
+                            fontweight='bold', transform=ax.transData)
+            extent = probe.get_window_extent().transformed(to_data)
+            sizes[label] = (extent.width, extent.height)
+            probe.remove()
+
+        style = dict(fontsize=LABEL_FONT_SIZE, fontweight='bold',
+                     ha='center', va='center', zorder=7)
+        placed = []
+        beside = []
+        for label, box in boxes.items():
+            width, height = sizes[label]
+            centre = ((box[0] + box[2]) / 2.0, (box[1] + box[3]) / 2.0)
+            room_x, room_y = box[2] - box[0], box[3] - box[1]
+            if width <= 0.85 * room_x and height <= 0.85 * room_y:
+                ax.text(*centre, label, **style)
+            elif height <= 0.85 * room_x and width <= 0.85 * room_y:
+                ax.text(*centre, label, rotation=90, **style)
+            else:
+                beside.append(label)
+                continue
+            placed.append(box)
+
+        for label in beside:
+            box = boxes[label]
+            width, height = sizes[label]
+            width, height = width + LABEL_GAP, height + LABEL_GAP  # white box
+            centre = ((box[0] + box[2]) / 2.0, (box[1] + box[3]) / 2.0)
+            candidates = [
+                (centre[0], box[3] + LABEL_GAP + height / 2.0),  # above
+                (centre[0], box[1] - LABEL_GAP - height / 2.0),  # below
+                (box[2] + LABEL_GAP + width / 2.0, centre[1]),   # right
+                (box[0] - LABEL_GAP - width / 2.0, centre[1]),   # left
+            ]
+
+            def covered(position):
+                area = (position[0] - width / 2.0, position[1] - height / 2.0,
+                        position[0] + width / 2.0, position[1] + height / 2.0)
+                others = [b for other, b in boxes.items() if other != label]
+                return (sum(overlap(area, b) for b in others + placed)
+                        + overlap(area, robot_box) + outside(area))
+
+            position = min(candidates, key=covered)
+            ax.text(*position, label, **style,
+                    bbox=dict(boxstyle='square,pad=0.15', facecolor='white',
+                              edgecolor='black', linewidth=0.5))
+            placed.append((position[0] - width / 2.0, position[1] - height / 2.0,
+                           position[0] + width / 2.0, position[1] + height / 2.0))
 
 
 def main():
